@@ -1,6 +1,6 @@
 {
-  "eval_model_preparation_time": 0.0015,
-  "eval_runtime": 132.7164,
-  "eval_samples_per_second": 15.07,
-  "eval_steps_per_second": 1.884
+  "eval_model_preparation_time": 0.001,
+  "eval_runtime": 127.3948,
+  "eval_samples_per_second": 15.699,
+  "eval_steps_per_second": 1.962
 }
