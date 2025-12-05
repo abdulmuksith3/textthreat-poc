@@ -1,4 +1,4 @@
-<img width="1696" height="1253" alt="Screenshot 2025-12-05 142808" src="https://github.com/user-attachments/assets/f8918134-26b0-4a66-a83f-8a12810de770" /># TextThreat SIEM Proof-of-Concept
+# TextThreat SIEM Proof-of-Concept
 
 This repository contains the PoC implementation for **TextThreat** – an AI-powered toxicity / cyberbullying / stress signal detector on social media text.
 
@@ -257,12 +257,8 @@ python -m ipykernel install --user --name=textthreat-poc-venv
 Once `data/exports/textthreat_events.ndjson` is generated:
 
 1. **Ingest** it into Splunk as a JSON/NDJSON data source (index: `textthreat`).
-2. Build dashboards to visualize:
-   - `textthreat.severity_level`
-   - `textthreat.labels`
-   - `event.severity` over time
+2. Build dashboards to visualize
 3. Configure a **SOAR-lite email alert** for high severity events, e.g.:
-
    - Search: `index=textthreat event.severity > 0.8`
    - Trigger: when results > 0
    - Action: send email with comment text, labels, and severity.
