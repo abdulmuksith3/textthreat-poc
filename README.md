@@ -1,4 +1,4 @@
-# TextThreat SIEM Proof-of-Concept
+<img width="1696" height="1253" alt="Screenshot 2025-12-05 142808" src="https://github.com/user-attachments/assets/f8918134-26b0-4a66-a83f-8a12810de770" /># TextThreat SIEM Proof-of-Concept
 
 This repository contains the PoC implementation for **TextThreat** – an AI-powered toxicity / cyberbullying / stress signal detector on social media text.
 
@@ -266,5 +266,12 @@ Once `data/exports/textthreat_events.ndjson` is generated:
    - Search: `index=textthreat event.severity > 0.8`
    - Trigger: when results > 0
    - Action: send email with comment text, labels, and severity.
+  
+Demo Example:
+1. SIEM Dashboard
+  <img width="1696" height="1253" alt="Screenshot 2025-12-05 142808" src="https://github.com/user-attachments/assets/df5b646b-40bd-4c07-92e2-2a9f19677af6" />
+
+2. SOAR-lite Alerts 
+  <img width="1709" height="453" alt="Screenshot 2025-12-05 143421" src="https://github.com/user-attachments/assets/760ce9f3-56d5-4171-82e3-3b56239dcb4a" />
 
 These steps complete the end-to-end PoC: **model → normalized events → SIEM → alerting**.
