@@ -1,0 +1,43 @@
+{
+  "demo": true,
+  "iterations": 10,
+  "mode": "sample",
+  "model_version": "distilbert-jigsaw-v1",
+  "stages": {
+    "detection_to_export": {
+      "median_seconds": 0.0009024000028148293,
+      "p95_seconds": 0.0012793900561518965,
+      "samples": 10
+    },
+    "json_serialization_schema_validation": {
+      "median_seconds": 0.0008725998923182487,
+      "p95_seconds": 0.0012444400112144648,
+      "samples": 10
+    },
+    "model_inference": {
+      "median_seconds": 1.5350058674812317e-05,
+      "p95_seconds": 5.0900015048682654e-05,
+      "samples": 10
+    },
+    "preprocessing": {
+      "median_seconds": 5.849986337125301e-06,
+      "p95_seconds": 2.3584999144077278e-05,
+      "samples": 10
+    },
+    "siem_ingestion_simulation": {
+      "median_seconds": 0.014794150134548545,
+      "p95_seconds": 0.015857464889995752,
+      "samples": 10
+    },
+    "soar_dispatch_simulation": {
+      "median_seconds": 5.09992241859436e-06,
+      "p95_seconds": 0.015747430024202914,
+      "samples": 10
+    },
+    "total_pipeline": {
+      "median_seconds": 0.016243849997408688,
+      "p95_seconds": 0.031651230063289404,
+      "samples": 10
+    }
+  }
+}

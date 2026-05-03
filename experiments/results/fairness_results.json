@@ -1,0 +1,147 @@
+{
+  "demo": true,
+  "identity_columns": [
+    "male",
+    "female",
+    "homosexual_gay_or_lesbian",
+    "black",
+    "white",
+    "muslim",
+    "jewish",
+    "psychiatric_or_mental_illness"
+  ],
+  "maximum_demographic_parity_difference": 0.325508607198748,
+  "maximum_equalized_odds_difference": 0.0,
+  "note": "Demo fairness audit; use Jigsaw unintended-bias identity annotations for real audit.",
+  "subgroups": {
+    "black": {
+      "demographic_parity_difference": 0.0903954802259887,
+      "equalized_odds_difference": 0.0,
+      "groups": {
+        "0": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.423728813559322,
+          "true_positive_rate": 1.0
+        },
+        "1": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.3333333333333333,
+          "true_positive_rate": 1.0
+        }
+      }
+    },
+    "female": {
+      "demographic_parity_difference": 0.0784313725490196,
+      "equalized_odds_difference": 0.0,
+      "groups": {
+        "0": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.4117647058823529,
+          "true_positive_rate": 1.0
+        },
+        "1": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.3333333333333333,
+          "true_positive_rate": 1.0
+        }
+      }
+    },
+    "homosexual_gay_or_lesbian": {
+      "demographic_parity_difference": 0.13852813852813856,
+      "equalized_odds_difference": 0.0,
+      "groups": {
+        "0": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.42424242424242425,
+          "true_positive_rate": 1.0
+        },
+        "1": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.2857142857142857,
+          "true_positive_rate": 1.0
+        }
+      }
+    },
+    "jewish": {
+      "demographic_parity_difference": 0.325508607198748,
+      "equalized_odds_difference": 0.0,
+      "groups": {
+        "0": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.43661971830985913,
+          "true_positive_rate": 1.0
+        },
+        "1": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.1111111111111111,
+          "true_positive_rate": 1.0
+        }
+      }
+    },
+    "male": {
+      "demographic_parity_difference": 0.041415012942191576,
+      "equalized_odds_difference": 0.0,
+      "groups": {
+        "0": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.4098360655737705,
+          "true_positive_rate": 1.0
+        },
+        "1": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.3684210526315789,
+          "true_positive_rate": 1.0
+        }
+      }
+    },
+    "muslim": {
+      "demographic_parity_difference": 0.041415012942191576,
+      "equalized_odds_difference": 0.0,
+      "groups": {
+        "0": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.4098360655737705,
+          "true_positive_rate": 1.0
+        },
+        "1": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.3684210526315789,
+          "true_positive_rate": 1.0
+        }
+      }
+    },
+    "psychiatric_or_mental_illness": {
+      "demographic_parity_difference": 0.014939309056956118,
+      "equalized_odds_difference": 0.0,
+      "groups": {
+        "0": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.3968253968253968,
+          "true_positive_rate": 1.0
+        },
+        "1": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.4117647058823529,
+          "true_positive_rate": 1.0
+        }
+      }
+    },
+    "white": {
+      "demographic_parity_difference": 0.2091503267973856,
+      "equalized_odds_difference": 0.0,
+      "groups": {
+        "0": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.4444444444444444,
+          "true_positive_rate": 1.0
+        },
+        "1": {
+          "false_positive_rate": 0.0,
+          "selection_rate": 0.23529411764705882,
+          "true_positive_rate": 1.0
+        }
+      }
+    }
+  },
+  "threshold": 0.5
+}
