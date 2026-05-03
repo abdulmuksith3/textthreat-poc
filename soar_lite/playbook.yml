@@ -1,0 +1,4 @@
+recommendations:
+  threshold_high: "Review the event in the Splunk TextThreat dashboard and monitor related session activity."
+  threshold_critical: "Immediate escalation to the platform trust-and-safety team is recommended."
+  co_occurrence: "Review toxicity and stress signals within the same session window before escalation."

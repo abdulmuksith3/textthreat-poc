@@ -1,0 +1,26 @@
+{
+  "index_patterns": ["textthreat-events-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "event.kind": { "type": "keyword" },
+        "event.module": { "type": "keyword" },
+        "event.category": { "type": "keyword" },
+        "text_hash": { "type": "keyword" },
+        "source_platform": { "type": "keyword" },
+        "session_id": { "type": "keyword" },
+        "user_hash": { "type": "keyword" },
+        "digital_wellbeing.harm_types": { "type": "keyword" },
+        "digital_wellbeing.risk_score": { "type": "float" },
+        "digital_wellbeing.confidence": { "type": "float" },
+        "digital_wellbeing.model_version": { "type": "keyword" },
+        "digital_wellbeing.dp_noise_applied": { "type": "boolean" }
+      }
+    }
+  }
+}
