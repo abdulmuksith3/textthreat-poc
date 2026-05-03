@@ -36,11 +36,12 @@ def config_from_env() -> SplunkHECConfig | None:
     )
 
 
-def send_event(event: dict[str, Any], config: SplunkHECConfig | None = None, timeout: int = 15) -> dict[str, Any]:
+def send_event(event: dict[str, Any], config: SplunkHECConfig | None = None, timeout: int | None = None) -> dict[str, Any]:
     """Send one TextThreat event to Splunk HEC."""
     config = config or config_from_env()
     if config is None:
         return {"sent": False, "status": "skipped", "reason": "Splunk HEC environment variables are not configured."}
+    timeout = timeout or int(os.getenv("SPLUNK_HEC_TIMEOUT_SECONDS", "5"))
 
     endpoint = config.url
     if not endpoint.endswith("/services/collector/event"):

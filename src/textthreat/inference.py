@@ -24,8 +24,13 @@ class TextThreatAnalyzer:
         self.stress_model_id = stress_model_id or os.getenv("TEXTTHREAT_STRESS_MODEL_ID")
         self._toxicity = None
         self._stress = None
+        self._toxicity_loaded = False
+        self._stress_loaded = False
 
     def _default_local_model(self, subdir: str) -> str | None:
+        auto_load = os.getenv("TEXTTHREAT_AUTO_LOAD_LOCAL_MODELS", "").lower() in {"1", "true", "yes"}
+        if not auto_load:
+            return None
         path = MODELS_DIR / subdir
         if (path / "config.json").exists():
             return str(path)
@@ -51,14 +56,16 @@ class TextThreatAnalyzer:
 
     @property
     def toxicity_model(self):
-        if self._toxicity is None:
+        if not self._toxicity_loaded:
             self._toxicity = self._load_sequence_model(self.toxicity_model_id, "distilbert_jigsaw")
+            self._toxicity_loaded = True
         return self._toxicity
 
     @property
     def stress_model(self):
-        if self._stress is None:
+        if not self._stress_loaded:
             self._stress = self._load_sequence_model(self.stress_model_id, "distilbert_dreaddit")
+            self._stress_loaded = True
         return self._stress
 
     def _model_scores(self, bundle, text: str) -> dict[str, float]:

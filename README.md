@@ -172,6 +172,18 @@ Demo workflow:
 
 If no trained model is configured, the app uses a clearly marked demo fallback scorer. For the final thesis demo, configure trained model IDs.
 
+By default the local app does not auto-load local model folders, so the submit button responds quickly during setup. To force local model loading from `models/distilbert_jigsaw/`, set:
+
+```powershell
+$env:TEXTTHREAT_AUTO_LOAD_LOCAL_MODELS="1"
+```
+
+For a hosted demo, prefer an explicit model ID:
+
+```powershell
+$env:TEXTTHREAT_TOXICITY_MODEL_ID="your-hf-username/textthreat-distilbert-jigsaw"
+```
+
 ## Splunk Dashboard
 
 See:
