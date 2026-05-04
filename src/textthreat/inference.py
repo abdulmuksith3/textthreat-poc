@@ -50,7 +50,8 @@ class TextThreatAnalyzer:
         try:
             model_path = Path(model_id)
             tokenizer = AutoTokenizer.from_pretrained(model_id)
-            if (model_path / "adapter_config.json").exists():
+            has_full_weights = (model_path / "model.safetensors").exists() or (model_path / "pytorch_model.bin").exists()
+            if (model_path / "adapter_config.json").exists() and not has_full_weights:
                 try:
                     from peft import PeftModel
                 except ImportError:

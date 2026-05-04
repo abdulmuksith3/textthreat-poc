@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,31 @@ from src.textthreat.splunk_hec import send_event
 
 
 analyzer = TextThreatAnalyzer()
+
+
+def should_prewarm_models() -> bool:
+    """Return true when configured model paths should be loaded before serving requests."""
+    flag = os.getenv("TEXTTHREAT_PRELOAD_MODELS", "1").lower()
+    if flag in {"0", "false", "no"}:
+        return False
+    return bool(
+        analyzer.toxicity_model_id
+        or analyzer.stress_model_id
+        or os.getenv("TEXTTHREAT_AUTO_LOAD_LOCAL_MODELS", "").lower() in {"1", "true", "yes"}
+    )
+
+
+def prewarm_models() -> None:
+    """Load configured models once at startup so the submit button responds promptly."""
+    if not should_prewarm_models():
+        return
+    started = time.perf_counter()
+    result = analyzer.analyze("TextThreat startup model warmup.")
+    elapsed = time.perf_counter() - started
+    print(f"TextThreat model warmup completed in {elapsed:.2f}s: {', '.join(result['inference_modes'])}", flush=True)
+
+
+prewarm_models()
 
 
 def analyze_comment(comment: str, source_platform: str, session_id: str) -> tuple[str, str]:
@@ -63,7 +89,13 @@ with gr.Blocks(title="TextThreat Splunk Demo") as demo:
     submit = gr.Button("Analyze & Send to Splunk", variant="primary")
     summary = gr.Textbox(label="Result", lines=6)
     event_json = gr.Code(label="Event and Splunk status", language="json")
-    submit.click(analyze_comment, inputs=[comment, source_platform, session_id], outputs=[summary, event_json])
+    submit.click(
+        analyze_comment,
+        inputs=[comment, source_platform, session_id],
+        outputs=[summary, event_json],
+        api_name="analyze_comment",
+        queue=False,
+    )
 
 
 if __name__ == "__main__":
