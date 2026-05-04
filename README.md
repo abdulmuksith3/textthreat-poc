@@ -161,6 +161,8 @@ SPLUNK_INDEX=textthreat
 
 `TEXTTHREAT_EVENT_THRESHOLD` controls when a model score becomes an active `digital_wellbeing.harm_types` label in the live demo. The default demo threshold is `0.55` to avoid treating borderline, poorly calibrated scores as active harms. The raw per-label scores are still included in the exported event JSON.
 
+The hosted proof-of-concept also applies a transparent safety lexical overlay for explicit high-risk phrases such as direct threats, self-harm language, and profanity. This keeps the live SIEM demo responsive to obvious safety cases while the raw model scores remain visible in the exported JSON.
+
 Run locally:
 
 ```bash

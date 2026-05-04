@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import inspect
+import re
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +12,22 @@ import numpy as np
 
 from .constants import LABELS, MODEL_VERSION, STRESS_LABEL
 from .utils import MODELS_DIR
+
+
+SAFETY_OVERLAY_RULES = [
+    (
+        re.compile(r"\b(i\s+(want|wanna|wish|need)\s+(to\s+)?die|kill\s+myself|suicide|end\s+my\s+life)\b", re.I),
+        {STRESS_LABEL: 0.95},
+    ),
+    (
+        re.compile(r"\b(kill\s+you|hurt\s+you|i\s+will\s+kill|i'?m\s+going\s+to\s+kill|death\s+threat)\b", re.I),
+        {"threat": 0.95, "toxic": 0.85},
+    ),
+    (
+        re.compile(r"\b(fuck|fucking|shit|bitch|asshole|cunt)\b", re.I),
+        {"obscene": 0.80, "toxic": 0.70},
+    ),
+]
 
 
 class TextThreatAnalyzer:
@@ -129,6 +146,17 @@ class TextThreatAnalyzer:
             STRESS_LABEL: min(0.98, 0.10 + base + 0.24 * stress_hits),
         }
 
+    def _apply_safety_overlay(self, text: str, scores: dict[str, float]) -> bool:
+        """Apply transparent minimum scores for explicit safety-critical phrases."""
+        matched = False
+        for pattern, floors in SAFETY_OVERLAY_RULES:
+            if not pattern.search(text):
+                continue
+            matched = True
+            for label, floor in floors.items():
+                scores[label] = max(float(scores.get(label, 0.0)), floor)
+        return matched
+
     def analyze(self, text: str) -> dict[str, Any]:
         """Return harm scores and inference metadata for one comment."""
         scores: dict[str, float] = {}
@@ -147,4 +175,6 @@ class TextThreatAnalyzer:
         elif STRESS_LABEL not in scores:
             scores[STRESS_LABEL] = self._fallback_scores(text)[STRESS_LABEL]
             modes.append("stress_demo_fallback")
+        if self._apply_safety_overlay(text, scores):
+            modes.append("safety_lexical_overlay")
         return {"scores": scores, "model_version": MODEL_VERSION, "inference_modes": modes}
