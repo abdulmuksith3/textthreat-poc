@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import inspect
 from pathlib import Path
 from typing import Any
 
@@ -45,6 +46,24 @@ def apply_lora(model, task_type: str):
         target_modules=["q_lin", "v_lin"],
     )
     return get_peft_model(model, config)
+
+
+def build_trainer(Trainer, *, model, args, train_dataset, eval_dataset, tokenizer, data_collator, compute_metrics):
+    """Create a Transformers Trainer across tokenizer API changes."""
+    trainer_kwargs = {
+        "model": model,
+        "args": args,
+        "train_dataset": train_dataset,
+        "eval_dataset": eval_dataset,
+        "data_collator": data_collator,
+        "compute_metrics": compute_metrics,
+    }
+    trainer_params = inspect.signature(Trainer.__init__).parameters
+    if "processing_class" in trainer_params:
+        trainer_kwargs["processing_class"] = tokenizer
+    elif "tokenizer" in trainer_params:
+        trainer_kwargs["tokenizer"] = tokenizer
+    return Trainer(**trainer_kwargs)
 
 
 def train_jigsaw(args: argparse.Namespace) -> dict[str, Any]:
@@ -110,7 +129,8 @@ def train_jigsaw(args: argparse.Namespace) -> dict[str, Any]:
         report_to=[],
         seed=RANDOM_SEED,
     )
-    trainer = Trainer(
+    trainer = build_trainer(
+        Trainer,
         model=model,
         args=training_args,
         train_dataset=train_ds,
@@ -195,7 +215,8 @@ def train_dreaddit(args: argparse.Namespace) -> dict[str, Any]:
         report_to=[],
         seed=RANDOM_SEED,
     )
-    trainer = Trainer(
+    trainer = build_trainer(
+        Trainer,
         model=model,
         args=training_args,
         train_dataset=train_ds,
