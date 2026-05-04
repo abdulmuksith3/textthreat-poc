@@ -64,11 +64,15 @@ def main(argv: list[str] | None = None) -> None:
             root / "models" / "svm_tfidf",
             ["tfidf_vectorizer.joblib", "svm_calibrated_ovr.joblib"],
         ),
-        "stress_dreaddit": check_joblib_pair(
+    }
+    distilbert_dreaddit = root / "models" / "distilbert_dreaddit"
+    if distilbert_dreaddit.exists():
+        checks["distilbert_dreaddit"] = check_distilbert(distilbert_dreaddit)
+    else:
+        checks["stress_dreaddit"] = check_joblib_pair(
             root / "models" / "stress_dreaddit",
             ["tfidf_stress.joblib", "logreg_stress.joblib"],
-        ),
-    }
+        )
     failed = False
     for name, messages in checks.items():
         if messages:
