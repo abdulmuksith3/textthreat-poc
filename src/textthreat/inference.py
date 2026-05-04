@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import inspect
 from pathlib import Path
 from typing import Any
 
@@ -98,6 +99,8 @@ class TextThreatAnalyzer:
         model = bundle["model"]
         torch = bundle["torch"]
         inputs = tokenizer(text, truncation=True, padding=True, max_length=256, return_tensors="pt")
+        accepted_inputs = inspect.signature(model.forward).parameters
+        inputs = {key: value for key, value in inputs.items() if key in accepted_inputs}
         with torch.no_grad():
             logits = model(**inputs).logits.detach().cpu().numpy()[0]
         labels = [model.config.id2label.get(idx, LABELS[idx] if idx < len(LABELS) else str(idx)) for idx in range(len(logits))]

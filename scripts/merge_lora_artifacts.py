@@ -24,11 +24,17 @@ def has_full_weights(path: Path) -> bool:
 
 
 def remove_adapter_files(path: Path) -> None:
-    """Remove adapter-only files after the full merged model has been saved."""
+    """Move adapter-only files aside after the full merged model has been saved."""
     for filename in ["adapter_config.json", "adapter_model.safetensors", "adapter_model.bin"]:
         artifact = path / filename
         if artifact.exists():
-            artifact.unlink()
+            backup_dir = path / "_adapter_backup"
+            backup_dir.mkdir(parents=True, exist_ok=True)
+            backup = backup_dir / filename
+            if backup.exists():
+                artifact.unlink()
+            else:
+                artifact.replace(backup)
 
 
 def merge_lora_model(
@@ -43,7 +49,7 @@ def merge_lora_model(
     if not adapter_dir.exists():
         print(f"Skipping missing directory: {adapter_dir}")
         return
-    if has_full_weights(adapter_dir) and not has_adapter_weights(adapter_dir):
+    if has_full_weights(adapter_dir):
         remove_adapter_files(adapter_dir)
         print(f"Already full model: {adapter_dir}")
         return
