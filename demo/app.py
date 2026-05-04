@@ -21,6 +21,18 @@ from src.textthreat.splunk_hec import send_event
 
 
 analyzer = TextThreatAnalyzer()
+DEMO_EVENT_THRESHOLD = 0.55
+
+
+def event_threshold() -> float:
+    """Return the demo harm activation threshold."""
+    raw_value = os.getenv("TEXTTHREAT_EVENT_THRESHOLD")
+    if raw_value is None:
+        return DEMO_EVENT_THRESHOLD
+    try:
+        return max(0.0, min(1.0, float(raw_value)))
+    except ValueError:
+        return DEMO_EVENT_THRESHOLD
 
 
 def should_prewarm_models() -> bool:
@@ -55,12 +67,14 @@ def analyze_comment(comment: str, source_platform: str, session_id: str) -> tupl
         return "Enter a comment to analyze.", "{}"
 
     result = analyzer.analyze(comment)
+    threshold = event_threshold()
     event = build_event(
         comment,
         result["scores"],
         source_platform or "demo_form",
         model_version=result["model_version"],
         session_id=session_id.strip() or None,
+        threshold=threshold,
     )
     splunk_status = send_event(event)
     harm_types = event["digital_wellbeing"]["harm_types"] or ["none_above_threshold"]
@@ -71,6 +85,7 @@ def analyze_comment(comment: str, source_platform: str, session_id: str) -> tupl
             f"Harm types: {', '.join(harm_types)}",
             f"Text hash: {event['text_hash']}",
             f"Inference: {', '.join(result['inference_modes'])}",
+            f"Alert threshold: {threshold:.2f}",
             f"Splunk: {splunk_status.get('status')}",
         ]
     )

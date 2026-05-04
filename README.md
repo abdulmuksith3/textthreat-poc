@@ -153,10 +153,13 @@ Configure secrets in the host:
 ```text
 TEXTTHREAT_TOXICITY_MODEL_ID=<local path or Hugging Face model id>
 TEXTTHREAT_STRESS_MODEL_ID=<optional stress model id>
+TEXTTHREAT_EVENT_THRESHOLD=0.55
 SPLUNK_HEC_URL=https://<your-stack>.splunkcloud.com:8088/services/collector/event
 SPLUNK_HEC_TOKEN=<token>
 SPLUNK_INDEX=textthreat
 ```
+
+`TEXTTHREAT_EVENT_THRESHOLD` controls when a model score becomes an active `digital_wellbeing.harm_types` label in the live demo. The default demo threshold is `0.55` to avoid treating borderline, poorly calibrated scores as active harms. The raw per-label scores are still included in the exported event JSON.
 
 Run locally:
 
