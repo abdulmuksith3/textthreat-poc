@@ -6,13 +6,11 @@ import argparse
 from pathlib import Path
 
 
-def has_any_weight_file(path: Path) -> bool:
-    """Return true when a model directory contains a loadable weight file."""
+def has_full_weight_file(path: Path) -> bool:
+    """Return true when a model directory contains full Hugging Face weights."""
     return any(
         (path / filename).exists()
         for filename in [
-            "adapter_model.safetensors",
-            "adapter_model.bin",
             "model.safetensors",
             "pytorch_model.bin",
         ]
@@ -20,7 +18,7 @@ def has_any_weight_file(path: Path) -> bool:
 
 
 def check_distilbert(path: Path) -> list[str]:
-    """Return missing/invalid artifact messages for a DistilBERT/LoRA directory."""
+    """Return missing/invalid artifact messages for a full DistilBERT directory."""
     messages: list[str] = []
     if not path.exists():
         return [f"Missing directory: {path}"]
@@ -28,13 +26,19 @@ def check_distilbert(path: Path) -> list[str]:
         messages.append(f"Missing config.json in {path}")
     if not (path / "tokenizer.json").exists() and not (path / "vocab.txt").exists():
         messages.append(f"Missing tokenizer files in {path}")
-    if (path / "adapter_config.json").exists():
-        if not (path / "adapter_model.safetensors").exists() and not (path / "adapter_model.bin").exists():
-            messages.append(
-                f"Missing LoRA adapter weights in {path}: expected adapter_model.safetensors or adapter_model.bin"
-            )
-    elif not has_any_weight_file(path):
+    has_adapter_files = (
+        (path / "adapter_config.json").exists()
+        or (path / "adapter_model.safetensors").exists()
+        or (path / "adapter_model.bin").exists()
+    )
+    if not has_full_weight_file(path):
         messages.append(f"Missing model weights in {path}: expected model.safetensors or pytorch_model.bin")
+        if has_adapter_files:
+            messages.append(
+                f"{path} appears to be LoRA adapter-only. Retrain with the latest script or merge adapters before zipping."
+            )
+    elif has_adapter_files:
+        messages.append(f"Stale LoRA adapter files remain in {path}. Run scripts/merge_lora_artifacts.py before zipping.")
     return messages
 
 

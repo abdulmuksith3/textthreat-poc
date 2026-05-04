@@ -133,6 +133,13 @@ mlruns/
 
 Large weights, raw datasets, and MLflow run folders are ignored by Git.
 
+When LoRA is enabled, the training script merges the adapters into full Hugging Face model folders before saving. A valid final DistilBERT artifact contains `config.json`, `model.safetensors`, and tokenizer files. If you have adapter-only folders from an older Colab run, repair them before zipping:
+
+```bash
+python scripts/merge_lora_artifacts.py --root .
+python scripts/check_model_artifacts.py --root .
+```
+
 ## Hosted Splunk Demo
 
 Recommended free-hosted setup:

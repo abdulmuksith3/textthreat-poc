@@ -66,6 +66,26 @@ def build_trainer(Trainer, *, model, args, train_dataset, eval_dataset, tokenize
     return Trainer(**trainer_kwargs)
 
 
+def remove_stale_adapter_files(output_dir: Path) -> None:
+    """Remove adapter-only files so merged model folders load as full HF models."""
+    for filename in ["adapter_config.json", "adapter_model.safetensors", "adapter_model.bin"]:
+        path = output_dir / filename
+        if path.exists():
+            path.unlink()
+
+
+def save_full_model_artifact(model, tokenizer, output_dir: Path, training_args) -> None:
+    """Save a self-contained Hugging Face model, merging LoRA adapters when present."""
+    ensure_dir(output_dir)
+    model_to_save = model
+    if hasattr(model_to_save, "merge_and_unload"):
+        model_to_save = model_to_save.merge_and_unload()
+    remove_stale_adapter_files(output_dir)
+    model_to_save.save_pretrained(str(output_dir), safe_serialization=True)
+    tokenizer.save_pretrained(str(output_dir))
+    torch.save(training_args, output_dir / "training_args.bin")
+
+
 def train_jigsaw(args: argparse.Namespace) -> dict[str, Any]:
     """Fine-tune DistilBERT for six-label Jigsaw classification."""
     from datasets import Dataset
@@ -141,9 +161,7 @@ def train_jigsaw(args: argparse.Namespace) -> dict[str, Any]:
     )
     trainer.train()
     eval_metrics = trainer.evaluate()
-    ensure_dir(args.output_dir)
-    trainer.save_model(str(args.output_dir))
-    tokenizer.save_pretrained(str(args.output_dir))
+    save_full_model_artifact(trainer.model, tokenizer, args.output_dir, training_args)
 
     metrics = {"demo": False, "task": "jigsaw", "model_name": args.model_name, "use_lora": args.use_lora, **eval_metrics}
     write_json(args.results, metrics)
@@ -227,9 +245,7 @@ def train_dreaddit(args: argparse.Namespace) -> dict[str, Any]:
     )
     trainer.train()
     eval_metrics = trainer.evaluate()
-    ensure_dir(args.output_dir)
-    trainer.save_model(str(args.output_dir))
-    tokenizer.save_pretrained(str(args.output_dir))
+    save_full_model_artifact(trainer.model, tokenizer, args.output_dir, training_args)
 
     metrics = {"demo": False, "task": "dreaddit", "model_name": args.model_name, "use_lora": args.use_lora, **eval_metrics}
     write_json(args.results, metrics)
