@@ -43,12 +43,37 @@ class TextThreatAnalyzer:
             return None
         try:
             import torch
-            from transformers import AutoModelForSequenceClassification, AutoTokenizer
+            from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
         except ImportError:
             return None
         try:
+            model_path = Path(model_id)
             tokenizer = AutoTokenizer.from_pretrained(model_id)
-            model = AutoModelForSequenceClassification.from_pretrained(model_id)
+            if (model_path / "adapter_config.json").exists():
+                try:
+                    from peft import PeftModel
+                except ImportError:
+                    return None
+                adapter_config = AutoConfig.from_pretrained(model_id)
+                base_model_name = "distilbert-base-uncased"
+                try:
+                    import json
+
+                    payload = json.loads((model_path / "adapter_config.json").read_text(encoding="utf-8"))
+                    base_model_name = payload.get("base_model_name_or_path") or base_model_name
+                except Exception:
+                    pass
+                base_model = AutoModelForSequenceClassification.from_pretrained(
+                    base_model_name,
+                    num_labels=len(LABELS),
+                    problem_type="multi_label_classification",
+                    id2label={idx: label for idx, label in enumerate(LABELS)},
+                    label2id={label: idx for idx, label in enumerate(LABELS)},
+                )
+                base_model.config.update(adapter_config.to_dict())
+                model = PeftModel.from_pretrained(base_model, model_id)
+            else:
+                model = AutoModelForSequenceClassification.from_pretrained(model_id)
             model.eval()
             return {"tokenizer": tokenizer, "model": model, "torch": torch, "model_id": model_id}
         except Exception:
