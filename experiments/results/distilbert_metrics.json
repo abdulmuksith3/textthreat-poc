@@ -1,0 +1,16 @@
+{
+  "demo": false,
+  "epoch": 1.0,
+  "eval_ece": 0.3834074109296004,
+  "eval_loss": 0.5478041172027588,
+  "eval_macro_f1": 0.0,
+  "eval_macro_pr_auc": 0.050669502709285615,
+  "eval_macro_roc_auc": 0.4332501542434068,
+  "eval_micro_f1": 0.0,
+  "eval_runtime": 14.1921,
+  "eval_samples_per_second": 14.092,
+  "eval_steps_per_second": 1.762,
+  "model_name": "distilbert-base-uncased",
+  "task": "jigsaw",
+  "use_lora": true
+}
