@@ -216,3 +216,6 @@ models/**/checkpoint-*/
 # Local Splunk/OpenSearch/SOAR outputs
 experiments/results/*.tmp
 experiments/results/soar_runtime_state.json
+
+# Downloaded Colab artifact bundles are copied in locally, not committed.
+artifacts/
