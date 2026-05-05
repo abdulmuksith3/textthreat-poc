@@ -15,8 +15,6 @@ user submits comment
 -> optional SOAR-lite alert
 ```
 
-OpenSearch compatibility is also included for portability, but the hosted dashboard demo uses Splunk Cloud.
-
 ## Current Implementation
 
 - Jigsaw Toxic Comment multi-label harm labels:
@@ -28,7 +26,6 @@ OpenSearch compatibility is also included for portability, but the hosted dashbo
 - NDJSON export for SIEM ingestion.
 - Splunk HEC client and Gradio hosted demo app.
 - Splunk SPL query library and dashboard notes.
-- OpenSearch index template and query examples.
 - SOAR-lite alert logging/email.
 - Latency, calibration/ECE, output-level privacy perturbation, Fairlearn audit, and synthetic co-occurrence scripts.
 - Fast smoke test that runs without raw Kaggle data.
@@ -140,26 +137,11 @@ python scripts/merge_lora_artifacts.py --root .
 python scripts/check_model_artifacts.py --root .
 ```
 
-Upload trained models to Hugging Face Hub:
-
-```bash
-set HF_TOKEN=<your-hugging-face-write-token>
-set HF_NAMESPACE=<your-hf-username-or-org>
-python scripts/upload_models_to_hf.py
-```
-
-The upload script publishes:
+The hosted demo uses stable model IDs:
 
 ```text
-<namespace>/textthreat-distilbert-jigsaw
-<namespace>/textthreat-distilbert-dreaddit
-```
-
-Then configure the demo with those model IDs:
-
-```text
-TEXTTHREAT_TOXICITY_MODEL_ID=<namespace>/textthreat-distilbert-jigsaw
-TEXTTHREAT_STRESS_MODEL_ID=<namespace>/textthreat-distilbert-dreaddit
+TEXTTHREAT_TOXICITY_MODEL_ID=abdulmuksith/textthreat-distilbert-jigsaw
+TEXTTHREAT_STRESS_MODEL_ID=abdulmuksith/textthreat-distilbert-dreaddit
 ```
 
 ## Hosted Splunk Demo
@@ -173,12 +155,23 @@ Recommended free-hosted setup:
 Configure secrets in the host:
 
 ```text
-TEXTTHREAT_TOXICITY_MODEL_ID=<local path or Hugging Face model id>
-TEXTTHREAT_STRESS_MODEL_ID=<optional stress model id>
+TEXTTHREAT_TOXICITY_MODEL_ID=abdulmuksith/textthreat-distilbert-jigsaw
+TEXTTHREAT_STRESS_MODEL_ID=abdulmuksith/textthreat-distilbert-dreaddit
 TEXTTHREAT_EVENT_THRESHOLD=0.55
 SPLUNK_HEC_URL=https://<your-stack>.splunkcloud.com:8088/services/collector/event
 SPLUNK_HEC_TOKEN=<token>
 SPLUNK_INDEX=textthreat
+SPLUNK_SOURCETYPE=_json
+SPLUNK_SOURCE=textthreat-demo
+SPLUNK_HEC_CHANNEL=11111111-1111-4111-8111-111111111111
+SMTP_HOST=<smtp-host>
+SMTP_PORT=587
+SMTP_USERNAME=<smtp-username>
+SMTP_PASSWORD=<smtp-password>
+ALERT_TO_EMAIL=<recipient-email>
+ALERT_FROM_EMAIL=<sender-email>
+SOAR_LITE_ENABLED=1
+SOAR_LITE_THRESHOLD=0.8
 ```
 
 `TEXTTHREAT_EVENT_THRESHOLD` controls when a model score becomes an active `digital_wellbeing.harm_types` label in the live demo. The default demo threshold is `0.55` to avoid treating borderline, poorly calibrated scores as active harms. The raw per-label scores are still included in the exported event JSON.
@@ -301,7 +294,6 @@ CSV/email alert format. For the free hosted demo, use the inline escalation path
 | A2 Schema | `schema/textthreat_event_schema.json`, `src/textthreat/schema.py` |
 | NDJSON export | `src/textthreat/export_events.py`, `data/exports/sample_textthreat_events.ndjson` |
 | A3 Splunk SIEM | `src/textthreat/splunk_hec.py`, `siem/splunk/`, `demo/app.py` |
-| OpenSearch compatibility | `siem/opensearch/` |
 | A4 SOAR-lite | `soar_lite/soar_lite.py`, `soar_lite/playbook.yml` |
 | RQ1 metrics | `src/textthreat/evaluate.py`, `experiments/results/classification_metrics.json` |
 | RQ2 co-occurrence | `src/textthreat/cooccurrence.py`, `experiments/results/cooccurrence_results.json` |
