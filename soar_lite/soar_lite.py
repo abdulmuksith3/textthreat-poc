@@ -65,8 +65,27 @@ def recommendation_for(event: dict[str, Any], playbook: dict[str, Any], alert_ty
 
 def smtp_configured() -> bool:
     """Check whether SMTP environment variables are available."""
-    required = ["SMTP_HOST", "SMTP_PORT", "ALERT_TO_EMAIL", "ALERT_FROM_EMAIL"]
-    return all(os.getenv(name) for name in required)
+    return all([os.getenv("SMTP_HOST"), os.getenv("SMTP_PORT"), alert_to_email(), alert_from_email()])
+
+
+def smtp_username() -> str | None:
+    """Return SMTP username using either supported environment naming style."""
+    return os.getenv("SMTP_USERNAME") or os.getenv("SMTP_USER")
+
+
+def smtp_password() -> str | None:
+    """Return SMTP password using either supported environment naming style."""
+    return os.getenv("SMTP_PASSWORD") or os.getenv("SMTP_PASS")
+
+
+def alert_from_email() -> str | None:
+    """Return alert sender address, defaulting to the SMTP user for local demos."""
+    return os.getenv("ALERT_FROM_EMAIL") or smtp_username()
+
+
+def alert_to_email() -> str | None:
+    """Return alert recipient address, defaulting to the SMTP user for local demos."""
+    return os.getenv("ALERT_TO_EMAIL") or alert_from_email()
 
 
 def send_email_alert(event: dict[str, Any], recommendation: str, alert_type: str = "threshold") -> dict[str, Any]:
@@ -75,8 +94,8 @@ def send_email_alert(event: dict[str, Any], recommendation: str, alert_type: str
         return {"sent": False, "reason": "SMTP settings are not configured."}
     message = EmailMessage()
     message["Subject"] = f"TextThreat {alert_type} alert"
-    message["From"] = os.environ["ALERT_FROM_EMAIL"]
-    message["To"] = os.environ["ALERT_TO_EMAIL"]
+    message["From"] = alert_from_email() or ""
+    message["To"] = alert_to_email() or ""
     body = "\n".join(
         [
             f"Alert timestamp: {now_utc_iso()}",
@@ -93,8 +112,8 @@ def send_email_alert(event: dict[str, Any], recommendation: str, alert_type: str
 
     host = os.environ["SMTP_HOST"]
     port = int(os.environ.get("SMTP_PORT", "587"))
-    username = os.getenv("SMTP_USERNAME")
-    password = os.getenv("SMTP_PASSWORD")
+    username = smtp_username()
+    password = smtp_password()
     with smtplib.SMTP(host, port, timeout=20) as client:
         client.starttls()
         if username and password:

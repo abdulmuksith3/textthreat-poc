@@ -129,6 +129,7 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
 .venv
 env/
 venv/
@@ -183,6 +184,7 @@ cython_debug/
 # TextThreat local configuration and generated artifacts
 .env
 config/settings.env
+config/*.local.env
 mlruns/
 wandb/
 
