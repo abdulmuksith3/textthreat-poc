@@ -14,10 +14,14 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+load_dotenv(ROOT / "config" / "settings.env")
+load_dotenv(ROOT / ".env")
 
 from src.textthreat.constants import HIGH_RISK_THRESHOLD
 from src.textthreat.export_events import SAMPLE_OUTPUT, sample_prediction_rows, write_events

@@ -13,9 +13,14 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
+
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+load_dotenv(ROOT / "config" / "settings.env")
+load_dotenv(ROOT / ".env")
 
 from src.textthreat.export_events import sample_prediction_rows
 from src.textthreat.schema import build_event
