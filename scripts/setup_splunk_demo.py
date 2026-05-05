@@ -51,28 +51,36 @@ def management_url() -> str | None:
 
 
 def splunk_request(path: str, data: dict[str, str] | None = None) -> tuple[int, str]:
-    """Call the Splunk management API using basic auth."""
+    """Call the Splunk management API using bearer token or basic auth."""
     base_url = management_url()
     if not base_url:
         raise SystemExit("Missing SPLUNK_MANAGEMENT_URL or SPLUNK_HOST for dashboard/index setup.")
-    username = require_env("SPLUNK_USERNAME")
-    password = require_env("SPLUNK_PASSWORD")
     url = f"{base_url}{path}"
     body = urllib.parse.urlencode(data or {}).encode("utf-8")
-    auth_header = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode("ascii")
+    api_token = env("SPLUNK_API_TOKEN") or env("SPLUNK_ACCESS_TOKEN")
+    if api_token:
+        auth_value = f"Bearer {api_token}"
+    else:
+        username = require_env("SPLUNK_USERNAME")
+        password = require_env("SPLUNK_PASSWORD")
+        auth_header = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode("ascii")
+        auth_value = f"Basic {auth_header}"
     request = urllib.request.Request(
         url,
         data=body,
-        headers={"Authorization": f"Basic {auth_header}", "Content-Type": "application/x-www-form-urlencoded"},
+        headers={"Authorization": auth_value, "Content-Type": "application/x-www-form-urlencoded"},
         method="POST",
     )
-    context = ssl.create_default_context()
+    verify_ssl = os.getenv("SPLUNK_VERIFY_SSL", "true").lower() not in {"0", "false", "no"}
+    context = ssl.create_default_context() if verify_ssl else ssl._create_unverified_context()
     try:
         opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=context))
         with opener.open(request, timeout=20) as response:
             return response.status, response.read().decode("utf-8", errors="replace")
     except urllib.error.HTTPError as exc:
         return exc.code, exc.read().decode("utf-8", errors="replace")
+    except urllib.error.URLError as exc:
+        return 0, f"connection_error: {exc.reason}"
 
 
 def create_index(index: str) -> None:

@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 import os
+import ssl
 import urllib.error
 import urllib.request
+import uuid
 from dataclasses import dataclass
 from typing import Any
 
@@ -42,6 +44,8 @@ def send_event(event: dict[str, Any], config: SplunkHECConfig | None = None, tim
     if config is None:
         return {"sent": False, "status": "skipped", "reason": "Splunk HEC environment variables are not configured."}
     timeout = timeout or int(os.getenv("SPLUNK_HEC_TIMEOUT_SECONDS", "5"))
+    verify_ssl = os.getenv("SPLUNK_VERIFY_SSL", "true").lower() not in {"0", "false", "no"}
+    context = None if verify_ssl else ssl._create_unverified_context()
 
     endpoint = config.url
     if not endpoint.endswith("/services/collector/event"):
@@ -55,11 +59,15 @@ def send_event(event: dict[str, Any], config: SplunkHECConfig | None = None, tim
     request = urllib.request.Request(
         endpoint,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Authorization": f"Splunk {config.token}", "Content-Type": "application/json"},
+        headers={
+            "Authorization": f"Splunk {config.token}",
+            "Content-Type": "application/json",
+            "X-Splunk-Request-Channel": os.getenv("SPLUNK_HEC_CHANNEL", str(uuid.uuid4())),
+        },
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with urllib.request.urlopen(request, timeout=timeout, context=context) as response:
             body = response.read().decode("utf-8")
             return {"sent": True, "status": response.status, "response": body}
     except urllib.error.HTTPError as exc:

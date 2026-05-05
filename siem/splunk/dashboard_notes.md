@@ -24,13 +24,24 @@ TextThreat includes a setup script that sends sample events through HEC and, whe
 $env:SPLUNK_HEC_URL="https://<your-stack>.splunkcloud.com:8088/services/collector/event"
 $env:SPLUNK_HEC_TOKEN="<hec-token>"
 $env:SPLUNK_INDEX="textthreat"
+$env:SPLUNK_VERIFY_SSL="true"
+$env:SPLUNK_HEC_CHANNEL="11111111-1111-4111-8111-111111111111"
 
 # Optional, for automatic index/dashboard creation:
 $env:SPLUNK_MANAGEMENT_URL="https://<your-stack>.splunkcloud.com:8089"
+$env:SPLUNK_API_TOKEN="<splunk-access-token>"
+
+# Or use username/password instead of API token:
 $env:SPLUNK_USERNAME="<splunk-username>"
 $env:SPLUNK_PASSWORD="<splunk-password>"
 
 python scripts/setup_splunk_demo.py
+```
+
+If local Python certificate validation fails on Windows, use this only for local demo testing:
+
+```powershell
+$env:SPLUNK_VERIFY_SSL="false"
 ```
 
 If Splunk Cloud management API access is blocked, run:
