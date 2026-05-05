@@ -1,206 +1,102 @@
 ---
+license: mit
 base_model: distilbert-base-uncased
-library_name: peft
+library_name: transformers
+pipeline_tag: text-classification
 tags:
-- base_model:adapter:distilbert-base-uncased
-- lora
+- distilbert
 - transformers
+- text-classification
+- multi-label-classification
+- toxicity-detection
+- digital-wellbeing
+- cybersecurity-analytics
+- siem
+- splunk
+- textthreat
 ---
 
-# Model Card for Model ID
+# TextThreat DistilBERT Jigsaw Classifier
 
-<!-- Provide a quick summary of what the model is/does. -->
+This model is part of **TextThreat - AI-Powered Detection of Digital Well-Being Risks with Cybersecurity Analytics**, an MSc thesis proof-of-concept by Abdul Muksith Rizvi at the University of Doha for Science and Technology.
 
-
+TextThreat detects digital well-being risk signals in social-media text and exports schema-valid cybersecurity-style events for SIEM analytics, with a Splunk-first hosted demo path.
 
 ## Model Details
 
-### Model Description
+- **Model type:** DistilBERT sequence classifier
+- **Base model:** `distilbert-base-uncased`
+- **Task:** Jigsaw Toxic Comment multi-label classification
+- **Labels:** `toxic`, `severe_toxic`, `obscene`, `threat`, `insult`, `identity_hate`
+- **Problem type:** multi-label classification
+- **Training method:** LoRA/PEFT fine-tuning, exported as a merged full Hugging Face model
+- **Repository:** https://github.com/abdulmuksith3/textthreat-poc
+- **Thesis system:** TextThreat proof-of-concept for harm detection, SIEM-ready event export, Splunk/OpenSearch analytics, SOAR-lite alerting, latency, calibration, privacy perturbation, and fairness audit artifacts
 
-<!-- Provide a longer summary of what this model is. -->
+## Intended Use
 
+This model is intended for the TextThreat proof-of-concept pipeline:
 
+```text
+social media comment
+-> DistilBERT harm scoring
+-> TextThreat JSON event schema
+-> NDJSON / Splunk HEC export
+-> SIEM dashboard and optional SOAR-lite alert
+```
 
-- **Developed by:** [More Information Needed]
-- **Funded by [optional]:** [More Information Needed]
-- **Shared by [optional]:** [More Information Needed]
-- **Model type:** [More Information Needed]
-- **Language(s) (NLP):** [More Information Needed]
-- **License:** [More Information Needed]
-- **Finetuned from model [optional]:** [More Information Needed]
+The model can be used to generate per-label harm probabilities for research demonstrations and thesis artifact reproduction.
 
-### Model Sources [optional]
+## Out-of-Scope Use
 
-<!-- Provide the basic links for the model. -->
-
-- **Repository:** [More Information Needed]
-- **Paper [optional]:** [More Information Needed]
-- **Demo [optional]:** [More Information Needed]
-
-## Uses
-
-<!-- Address questions around how the model is intended to be used, including the foreseeable users of the model and those affected by the model. -->
-
-### Direct Use
-
-<!-- This section is for the model use without fine-tuning or plugging into a larger ecosystem/app. -->
-
-[More Information Needed]
-
-### Downstream Use [optional]
-
-<!-- This section is for the model use when fine-tuned for a task, or when plugged into a larger ecosystem/app -->
-
-[More Information Needed]
-
-### Out-of-Scope Use
-
-<!-- This section addresses misuse, malicious use, and uses that the model will not work well for. -->
-
-[More Information Needed]
-
-## Bias, Risks, and Limitations
-
-<!-- This section is meant to convey both technical and sociotechnical limitations. -->
-
-[More Information Needed]
-
-### Recommendations
-
-<!-- This section is meant to convey recommendations with respect to the bias, risk, and technical limitations. -->
-
-Users (both direct and downstream) should be made aware of the risks, biases and limitations of the model. More information needed for further recommendations.
-
-## How to Get Started with the Model
-
-Use the code below to get started with the model.
-
-[More Information Needed]
-
-## Training Details
-
-### Training Data
-
-<!-- This should link to a Dataset Card, perhaps with a short stub of information on what the training data is all about as well as documentation related to data pre-processing or additional filtering. -->
-
-[More Information Needed]
-
-### Training Procedure
-
-<!-- This relates heavily to the Technical Specifications. Content here should link to that section when it is relevant to the training procedure. -->
-
-#### Preprocessing [optional]
-
-[More Information Needed]
-
-
-#### Training Hyperparameters
-
-- **Training regime:** [More Information Needed] <!--fp32, fp16 mixed precision, bf16 mixed precision, bf16 non-mixed precision, fp16 non-mixed precision, fp8 mixed precision -->
-
-#### Speeds, Sizes, Times [optional]
-
-<!-- This section provides information about throughput, start/end time, checkpoint size if relevant, etc. -->
-
-[More Information Needed]
+This model is not intended for autonomous moderation, clinical risk assessment, law-enforcement decision-making, employment screening, or other high-stakes decisions. It should not be used as the only basis for action against a person.
 
 ## Evaluation
 
-<!-- This section describes the evaluation protocols and provides the results. -->
+The current uploaded artifact corresponds to the thesis proof-of-concept training run. Metrics are stored in the repository under `experiments/results/distilbert_metrics.json`.
 
-### Testing Data, Factors & Metrics
+| Metric | Value |
+|---|---:|
+| Micro F1 | 0.7363 |
+| Macro F1 | 0.4206 |
+| Macro ROC-AUC | 0.9780 |
+| Macro PR-AUC | 0.5324 |
+| Expected Calibration Error | 0.0032 |
+| Eval loss | 0.0471 |
 
-#### Testing Data
+## Limitations
 
-<!-- This should link to a Dataset Card if possible. -->
+- The model is trained for thesis proof-of-concept evidence, not as a production moderation service.
+- Toxicity labels come from the Jigsaw Toxic Comment task and may not cover all digital well-being risks.
+- Short, adversarial, sarcastic, reclaimed, or context-dependent text can be misclassified.
+- The live TextThreat demo applies a transparent safety lexical overlay for explicit threats, self-harm terms, and profanity so obvious demo-critical safety cases are not missed by the quick-trained model.
+- Fairness, calibration, and privacy experiments are represented in the companion repository and should be reviewed before deployment-style use.
 
-[More Information Needed]
+## Example
 
-#### Factors
+```python
+import torch
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-<!-- These are the things the evaluation is disaggregating by, e.g., subpopulations or domains. -->
+model_id = "abdulmuksith/textthreat-distilbert-jigsaw"
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForSequenceClassification.from_pretrained(model_id)
 
-[More Information Needed]
+text = "I will kill you"
+inputs = tokenizer(text, return_tensors="pt", truncation=True)
+inputs = {k: v for k, v in inputs.items() if k in model.forward.__code__.co_varnames}
 
-#### Metrics
+with torch.no_grad():
+    logits = model(**inputs).logits[0]
 
-<!-- These are the evaluation metrics being used, ideally with a description of why. -->
+scores = torch.sigmoid(logits)
+print({model.config.id2label[i]: float(scores[i]) for i in range(len(scores))})
+```
 
-[More Information Needed]
+## Citation
 
-### Results
+If referencing this model, cite the thesis project:
 
-[More Information Needed]
-
-#### Summary
-
-
-
-## Model Examination [optional]
-
-<!-- Relevant interpretability work for the model goes here -->
-
-[More Information Needed]
-
-## Environmental Impact
-
-<!-- Total emissions (in grams of CO2eq) and additional considerations, such as electricity usage, go here. Edit the suggested text below accordingly -->
-
-Carbon emissions can be estimated using the [Machine Learning Impact calculator](https://mlco2.github.io/impact#compute) presented in [Lacoste et al. (2019)](https://arxiv.org/abs/1910.09700).
-
-- **Hardware Type:** [More Information Needed]
-- **Hours used:** [More Information Needed]
-- **Cloud Provider:** [More Information Needed]
-- **Compute Region:** [More Information Needed]
-- **Carbon Emitted:** [More Information Needed]
-
-## Technical Specifications [optional]
-
-### Model Architecture and Objective
-
-[More Information Needed]
-
-### Compute Infrastructure
-
-[More Information Needed]
-
-#### Hardware
-
-[More Information Needed]
-
-#### Software
-
-[More Information Needed]
-
-## Citation [optional]
-
-<!-- If there is a paper or blog post introducing the model, the APA and Bibtex information for that should go in this section. -->
-
-**BibTeX:**
-
-[More Information Needed]
-
-**APA:**
-
-[More Information Needed]
-
-## Glossary [optional]
-
-<!-- If relevant, include terms and calculations in this section that can help readers understand the model or model card. -->
-
-[More Information Needed]
-
-## More Information [optional]
-
-[More Information Needed]
-
-## Model Card Authors [optional]
-
-[More Information Needed]
-
-## Model Card Contact
-
-[More Information Needed]
-### Framework versions
-
-- PEFT 0.19.1
+```text
+Rizvi, A. M. (2026). TextThreat: AI-Powered Detection of Digital Well-Being Risks with Cybersecurity Analytics. MSc thesis, University of Doha for Science and Technology.
+```
