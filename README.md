@@ -140,6 +140,28 @@ python scripts/merge_lora_artifacts.py --root .
 python scripts/check_model_artifacts.py --root .
 ```
 
+Upload trained models to Hugging Face Hub:
+
+```bash
+set HF_TOKEN=<your-hugging-face-write-token>
+set HF_NAMESPACE=<your-hf-username-or-org>
+python scripts/upload_models_to_hf.py
+```
+
+The upload script publishes:
+
+```text
+<namespace>/textthreat-distilbert-jigsaw
+<namespace>/textthreat-distilbert-dreaddit
+```
+
+Then configure the demo with those model IDs:
+
+```text
+TEXTTHREAT_TOXICITY_MODEL_ID=<namespace>/textthreat-distilbert-jigsaw
+TEXTTHREAT_STRESS_MODEL_ID=<namespace>/textthreat-distilbert-dreaddit
+```
+
 ## Hosted Splunk Demo
 
 Recommended free-hosted setup:

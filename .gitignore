@@ -202,6 +202,8 @@ models/**/*.bin
 models/**/*.pt
 models/**/*.pth
 models/**/*.safetensors
+models/**/adapter_config.json
+models/**/_adapter_backup/
 models/**/hf_outputs/
 models/**/checkpoint-*/
 
