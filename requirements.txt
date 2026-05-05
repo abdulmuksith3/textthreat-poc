@@ -19,5 +19,6 @@ joblib
 tqdm
 python-dotenv
 pyyaml
+splunk-sdk
 peft
 mlflow

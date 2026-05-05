@@ -201,12 +201,14 @@ Demo workflow:
 5. The event is validated against schema/textthreat_event_schema.json.
 6. The event is sent to Splunk HEC if credentials are configured.
 7. Splunk dashboard panels update from index=textthreat.
-8. SOAR-lite can log or email alerts for risk_score >= 0.8.
+8. SOAR-lite can log or email alerts for risk_score > 0.8.
 ```
 
 SOAR-lite escalation is enabled in the demo by default. Set `SOAR_LITE_THRESHOLD`
 to control the escalation threshold and `SOAR_LITE_ENABLED=0` to disable it for
-dashboard-only rehearsals.
+dashboard-only rehearsals. The hosted proof-of-concept uses inline SOAR-lite
+escalation from the submit action, which keeps the free demo responsive without a
+separate always-on worker.
 
 If no trained model is configured, the app uses a clearly marked demo fallback scorer. For the final thesis demo, configure trained model IDs.
 
@@ -276,6 +278,17 @@ returns the escalation result and writes an alert row to:
 ```text
 experiments/results/soar_alerts_log.csv
 ```
+
+An optional Splunk polling daemon is also included for thesis-parity operation when
+Splunk search API access is available:
+
+```bash
+python soar_lite/soar_lite.py --poll-splunk --interval 30
+```
+
+The poller queries the configured Splunk index, applies threshold escalation and
+30-minute same-session toxicity/stress co-occurrence checks, and dispatches the same
+CSV/email alert format. For the free hosted demo, use the inline escalation path.
 
 ## Thesis Artifact Mapping
 
