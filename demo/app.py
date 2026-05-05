@@ -18,6 +18,7 @@ if str(ROOT) not in sys.path:
 from src.textthreat.inference import TextThreatAnalyzer
 from src.textthreat.schema import build_event
 from src.textthreat.splunk_hec import send_event
+from soar_lite.soar_lite import ALERT_LOG_PATH, process_events
 
 
 analyzer = TextThreatAnalyzer()
@@ -33,6 +34,20 @@ def event_threshold() -> float:
         return max(0.0, min(1.0, float(raw_value)))
     except ValueError:
         return DEMO_EVENT_THRESHOLD
+
+
+def soar_threshold() -> float:
+    """Return the SOAR-lite escalation threshold for the live demo."""
+    raw_value = os.getenv("SOAR_LITE_THRESHOLD", "0.8")
+    try:
+        return max(0.0, min(1.0, float(raw_value)))
+    except ValueError:
+        return 0.8
+
+
+def soar_enabled() -> bool:
+    """Return true when SOAR-lite escalation should run after analysis."""
+    return os.getenv("SOAR_LITE_ENABLED", "1").lower() not in {"0", "false", "no"}
 
 
 def should_prewarm_models() -> bool:
@@ -77,8 +92,12 @@ def analyze_comment(comment: str, source_platform: str, session_id: str) -> tupl
         threshold=threshold,
     )
     splunk_status = send_event(event)
+    soar_alerts = process_events([event], threshold=soar_threshold()) if soar_enabled() else []
     harm_types = event["digital_wellbeing"]["harm_types"] or ["none_above_threshold"]
     risk = event["digital_wellbeing"]["risk_score"]
+    soar_status = f"{len(soar_alerts)} alert(s)"
+    if soar_alerts:
+        soar_status = f"{soar_status}; log={ALERT_LOG_PATH}"
     summary = "\n".join(
         [
             f"Risk score: {risk:.3f}",
@@ -87,15 +106,16 @@ def analyze_comment(comment: str, source_platform: str, session_id: str) -> tupl
             f"Inference: {', '.join(result['inference_modes'])}",
             f"Alert threshold: {threshold:.2f}",
             f"Splunk: {splunk_status.get('status')}",
+            f"SOAR-lite: {soar_status}",
         ]
     )
-    payload: dict[str, Any] = {"event": event, "splunk_status": splunk_status}
+    payload: dict[str, Any] = {"event": event, "splunk_status": splunk_status, "soar_alerts": soar_alerts}
     return summary, json.dumps(payload, indent=2)
 
 
 with gr.Blocks(title="TextThreat Splunk Demo") as demo:
     gr.Markdown("# TextThreat Splunk Demo")
-    gr.Markdown("Submit a comment to generate a schema-valid TextThreat event and send it to Splunk HEC when configured.")
+    gr.Markdown("Submit a comment to generate a schema-valid TextThreat event, send it to Splunk HEC, and trigger SOAR-lite escalation for high-risk events.")
     with gr.Row():
         comment = gr.Textbox(label="Comment", lines=6, placeholder="Paste a social media comment for analysis.")
     with gr.Row():

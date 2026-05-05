@@ -204,6 +204,10 @@ Demo workflow:
 8. SOAR-lite can log or email alerts for risk_score >= 0.8.
 ```
 
+SOAR-lite escalation is enabled in the demo by default. Set `SOAR_LITE_THRESHOLD`
+to control the escalation threshold and `SOAR_LITE_ENABLED=0` to disable it for
+dashboard-only rehearsals.
+
 If no trained model is configured, the app uses a clearly marked demo fallback scorer. For the final thesis demo, configure trained model IDs.
 
 By default the local app does not auto-load local model folders, so the submit button responds quickly during setup. To force local model loading from `models/distilbert_jigsaw/`, set:
@@ -264,6 +268,14 @@ experiments/results/soar_alerts_log.csv
 ```
 
 With SMTP settings, high-risk alerts can be emailed using the variables in `config/settings.example.env`.
+
+In the live Gradio demo, SOAR-lite runs immediately after the event is built and
+sent to Splunk. If the event risk score is above `SOAR_LITE_THRESHOLD`, the demo
+returns the escalation result and writes an alert row to:
+
+```text
+experiments/results/soar_alerts_log.csv
+```
 
 ## Thesis Artifact Mapping
 
