@@ -16,6 +16,35 @@ SPLUNK_HEC_TOKEN=<token>
 SPLUNK_INDEX=textthreat
 ```
 
+## Automated Setup
+
+TextThreat includes a setup script that sends sample events through HEC and, when Splunk management API access is available, creates the dashboard automatically:
+
+```powershell
+$env:SPLUNK_HEC_URL="https://<your-stack>.splunkcloud.com:8088/services/collector/event"
+$env:SPLUNK_HEC_TOKEN="<hec-token>"
+$env:SPLUNK_INDEX="textthreat"
+
+# Optional, for automatic index/dashboard creation:
+$env:SPLUNK_MANAGEMENT_URL="https://<your-stack>.splunkcloud.com:8089"
+$env:SPLUNK_USERNAME="<splunk-username>"
+$env:SPLUNK_PASSWORD="<splunk-password>"
+
+python scripts/setup_splunk_demo.py
+```
+
+If Splunk Cloud management API access is blocked, run:
+
+```powershell
+python scripts/setup_splunk_demo.py --events-only
+```
+
+Then create a dashboard manually in Splunk and paste the XML from:
+
+```text
+siem/splunk/textthreat_dashboard.xml
+```
+
 ## Demo Panels
 
 - Latest Submitted Events: table of newly submitted comments by hash.

@@ -1,0 +1,106 @@
+<dashboard version="1.1" theme="dark">
+  <label>TextThreat Digital Well-Being Risk</label>
+  <description>Splunk dashboard for TextThreat SIEM-ready digital well-being threat events.</description>
+  <fieldset submitButton="false">
+    <input type="time" token="time_range">
+      <label>Time range</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Total TextThreat Events</title>
+      <single>
+        <search>
+          <query>index=textthreat event.module=textthreat | stats count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+      </single>
+    </panel>
+    <panel>
+      <title>High Risk Events</title>
+      <single>
+        <search>
+          <query>index=textthreat event.module=textthreat digital_wellbeing.risk_score&gt;0.8 | stats count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+      </single>
+    </panel>
+    <panel>
+      <title>Average Risk Score</title>
+      <single>
+        <search>
+          <query>index=textthreat event.module=textthreat | stats avg(digital_wellbeing.risk_score) as avg_risk | eval avg_risk=round(avg_risk,3)</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Risk Score Time Series</title>
+      <chart>
+        <search>
+          <query>index=textthreat event.module=textthreat | timechart span=5m avg(digital_wellbeing.risk_score) as avg_risk perc95(digital_wellbeing.risk_score) as p95_risk</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="charting.chart">line</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Harm Type Counts</title>
+      <chart>
+        <search>
+          <query>index=textthreat event.module=textthreat | mvexpand digital_wellbeing.harm_types | stats count by digital_wellbeing.harm_types | sort - count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Events by Source Platform</title>
+      <chart>
+        <search>
+          <query>index=textthreat event.module=textthreat | stats count by source_platform | sort - count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Latest Submitted Events</title>
+      <table>
+        <search>
+          <query>index=textthreat event.module=textthreat | sort - _time | table _time text_hash digital_wellbeing.harm_types digital_wellbeing.risk_score digital_wellbeing.confidence digital_wellbeing.model_version source_platform session_id</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Co-occurrence Candidates: Toxicity + Stress in Same Session Window</title>
+      <table>
+        <search>
+          <query>index=textthreat event.module=textthreat digital_wellbeing.risk_score&gt;0.55 | mvexpand digital_wellbeing.harm_types | eval is_toxicity=if(digital_wellbeing.harm_types IN ("toxic","severe_toxic","obscene","threat","insult","identity_hate"),1,0) | eval is_stress=if(digital_wellbeing.harm_types="stress",1,0) | bin _time span=30m | stats max(is_toxicity) as toxicity max(is_stress) as stress values(text_hash) as text_hashes max(digital_wellbeing.risk_score) as max_risk by session_id _time | where toxicity=1 AND stress=1 | sort - _time</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+      </table>
+    </panel>
+  </row>
+</dashboard>
