@@ -118,6 +118,8 @@ def create_dashboard(index: str) -> None:
 def demo_rows() -> list[dict[str, Any]]:
     """Return demo rows that exercise dashboard panels."""
     rows = sample_prediction_rows(5)
+    for row in rows:
+        row["source_platform"] = "demo_form"
     rows.extend(
         [
             {
