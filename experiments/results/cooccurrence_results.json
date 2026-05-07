@@ -6,9 +6,9 @@
   "false_positives": 0,
   "precision": 1.0,
   "recall": 1.0,
-  "session_count": 20,
+  "session_count": 200,
   "threshold": 0.8,
-  "true_negatives": 10,
-  "true_positives": 10,
+  "true_negatives": 100,
+  "true_positives": 100,
   "window_minutes": 30
 }

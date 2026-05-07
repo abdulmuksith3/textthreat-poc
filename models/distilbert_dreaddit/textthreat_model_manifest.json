@@ -1,0 +1,16 @@
+{
+  "base_model": "distilbert-base-uncased",
+  "export_type": "merged_lora_full_huggingface_model",
+  "num_labels": 2,
+  "problem_type": "single_label_classification",
+  "labels": [
+    "non_stress",
+    "stress"
+  ],
+  "required_files": [
+    "config.json",
+    "model.safetensors",
+    "tokenizer.json",
+    "tokenizer_config.json"
+  ]
+}
