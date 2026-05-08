@@ -132,7 +132,7 @@ with gr.Blocks(title="TextThreat Splunk Demo") as demo:
         analyze_comment,
         inputs=[comment, source_platform, session_id],
         outputs=[summary, event_json],
-        api_name="analyze_comment",
+        api_name="predict",
         queue=False,
     )
 
