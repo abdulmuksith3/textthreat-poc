@@ -118,12 +118,16 @@ def send_email_alert(event: dict[str, Any], recommendation: str, alert_type: str
     port = int(os.environ.get("SMTP_PORT", "587"))
     username = smtp_username()
     password = smtp_password()
-    with smtplib.SMTP(host, port, timeout=20) as client:
-        client.starttls()
-        if username and password:
-            client.login(username, password)
-        client.send_message(message)
-    return {"sent": True}
+    try:
+        with smtplib.SMTP(host, port, timeout=20) as client:
+            client.starttls()
+            if username and password:
+                client.login(username, password)
+            client.send_message(message)
+        return {"sent": True}
+    except (OSError, TimeoutError, smtplib.SMTPException) as exc:
+        # Hosted containers may block outbound SMTP; keep SOAR-lite non-fatal for demo continuity.
+        return {"sent": False, "reason": f"smtp_error: {exc}"}
 
 
 def alert_row(event: dict[str, Any], alert_type: str, recommendation: str, email_sent: bool) -> dict[str, Any]:
