@@ -146,6 +146,20 @@ def postmark_api_token() -> str | None:
     return os.getenv("POSTMARK_API_TOKEN") or smtp_password()
 
 
+def postmark_error_reason(prefix: str, response_body: str) -> str:
+    """Return a concise Postmark API error reason for UI/debug output."""
+    try:
+        payload = json.loads(response_body)
+    except json.JSONDecodeError:
+        message = response_body
+    else:
+        message = str(payload.get("Message") or payload.get("ErrorCode") or payload)
+    message = " ".join(message.split())
+    if len(message) > 300:
+        message = f"{message[:297]}..."
+    return f"{prefix}: {message}" if message else prefix
+
+
 def send_postmark_api_alert(event: dict[str, Any], recommendation: str, alert_type: str) -> dict[str, Any]:
     """Send alert through Postmark HTTPS API when configured."""
     token = postmark_api_token()
@@ -192,7 +206,7 @@ def send_postmark_api_alert(event: dict[str, Any], recommendation: str, alert_ty
             return {"sent": 200 <= response.status < 300, "reason": f"postmark_api_status:{response.status}", "response": response_body}
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
-        return {"sent": False, "reason": f"postmark_api_http_error:{exc.code}", "response": body}
+        return {"sent": False, "reason": postmark_error_reason(f"postmark_api_http_error:{exc.code}", body), "response": body}
     except urllib.error.URLError as exc:
         return {"sent": False, "reason": f"postmark_api_connection_error:{exc.reason}"}
 
