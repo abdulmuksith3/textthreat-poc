@@ -113,6 +113,9 @@ def send_email_alert(event: dict[str, Any], recommendation: str, alert_type: str
         ]
     )
     message.set_content(body)
+    postmark_stream = os.getenv("POSTMARK_MESSAGE_STREAM")
+    if postmark_stream:
+        message["X-PM-Message-Stream"] = postmark_stream
 
     host = os.environ["SMTP_HOST"]
     port = int(os.environ.get("SMTP_PORT", "587"))
