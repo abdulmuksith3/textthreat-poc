@@ -1,0 +1,14 @@
+{
+  "demo": true,
+  "evaluation_type": "synthetic_session_windows",
+  "false_negatives": 0,
+  "false_positive_rate": 0.0,
+  "false_positives": 0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "session_count": 200,
+  "threshold": 0.8,
+  "true_negatives": 100,
+  "true_positives": 100,
+  "window_minutes": 30
+}

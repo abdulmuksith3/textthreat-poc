@@ -129,6 +129,7 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
 .venv
 env/
 venv/
@@ -179,3 +180,46 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# TextThreat local configuration and generated artifacts
+.env
+config/settings.env
+config/*.local.env
+mlruns/
+wandb/
+
+# Raw datasets are downloaded locally and documented, not committed.
+data/jigsaw/*.csv
+data/dreaddit/*.csv
+!data/jigsaw/README.md
+!data/dreaddit/README.md
+
+# Generated exports; keep only sanitized samples.
+data/exports/*.ndjson
+!data/exports/sample_textthreat_events.ndjson
+!data/exports/README.md
+
+# Model weights/checkpoints can be regenerated or stored in a model registry.
+models/**/*.bin
+models/**/*.pt
+models/**/*.pth
+models/**/*.safetensors
+models/**/adapter_config.json
+models/**/_adapter_backup/
+models/**/hf_outputs/
+models/**/checkpoint-*/
+
+# Keep lightweight model metadata/tokenizers when intentionally added.
+!models/**/config.json
+!models/**/tokenizer.json
+!models/**/tokenizer_config.json
+!models/**/special_tokens_map.json
+!models/**/vocab.txt
+!models/**/metrics.json
+
+# Local Splunk/OpenSearch/SOAR outputs
+experiments/results/*.tmp
+experiments/results/soar_runtime_state.json
+
+# Downloaded Colab artifact bundles are copied in locally, not committed.
+artifacts/

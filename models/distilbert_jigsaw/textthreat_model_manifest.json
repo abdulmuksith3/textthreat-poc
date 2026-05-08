@@ -1,0 +1,20 @@
+{
+  "base_model": "distilbert-base-uncased",
+  "export_type": "merged_lora_full_huggingface_model",
+  "num_labels": 6,
+  "problem_type": "multi_label_classification",
+  "labels": [
+    "toxic",
+    "severe_toxic",
+    "obscene",
+    "threat",
+    "insult",
+    "identity_hate"
+  ],
+  "required_files": [
+    "config.json",
+    "model.safetensors",
+    "tokenizer.json",
+    "tokenizer_config.json"
+  ]
+}

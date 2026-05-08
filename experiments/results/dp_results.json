@@ -1,0 +1,44 @@
+{
+  "baseline_macro_f1": 1.0,
+  "delta": 1e-05,
+  "demo": true,
+  "experiment_type": "output-level privacy-preserving perturbation experiment",
+  "results": [
+    {
+      "epsilon": 0.1,
+      "f1_degradation": 0.3666666666666667,
+      "macro_f1": 0.6333333333333333,
+      "relative_f1_degradation": 0.3666666666666667,
+      "sigma": 4.844805262605389
+    },
+    {
+      "epsilon": 0.5,
+      "f1_degradation": 0.32777777777777783,
+      "macro_f1": 0.6722222222222222,
+      "relative_f1_degradation": 0.32777777777777783,
+      "sigma": 0.9689610525210779
+    },
+    {
+      "epsilon": 1.0,
+      "f1_degradation": 0.3055555555555557,
+      "macro_f1": 0.6944444444444443,
+      "relative_f1_degradation": 0.3055555555555557,
+      "sigma": 0.48448052626053895
+    },
+    {
+      "epsilon": 2.0,
+      "f1_degradation": 0.15436507936507937,
+      "macro_f1": 0.8456349206349206,
+      "relative_f1_degradation": 0.15436507936507937,
+      "sigma": 0.24224026313026947
+    },
+    {
+      "epsilon": 5.0,
+      "f1_degradation": 0.0,
+      "macro_f1": 1.0,
+      "relative_f1_degradation": 0.0,
+      "sigma": 0.09689610525210779
+    }
+  ],
+  "sensitivity": 0.1
+}
