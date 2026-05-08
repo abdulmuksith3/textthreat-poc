@@ -9,6 +9,8 @@ import os
 import smtplib
 import sys
 import time
+import urllib.error
+import urllib.request
 from email.message import EmailMessage
 from pathlib import Path
 from typing import Any
@@ -95,6 +97,9 @@ def alert_to_email() -> str | None:
 def send_email_alert(event: dict[str, Any], recommendation: str, alert_type: str = "threshold") -> dict[str, Any]:
     """Send an SMTP email alert when SMTP settings exist."""
     if not smtp_configured():
+        api_result = send_postmark_api_alert(event, recommendation, alert_type)
+        if api_result.get("sent"):
+            return api_result
         return {"sent": False, "reason": "SMTP settings are not configured."}
     message = EmailMessage()
     message["Subject"] = f"TextThreat {alert_type} alert"
@@ -129,8 +134,67 @@ def send_email_alert(event: dict[str, Any], recommendation: str, alert_type: str
             client.send_message(message)
         return {"sent": True}
     except (OSError, TimeoutError, smtplib.SMTPException) as exc:
-        # Hosted containers may block outbound SMTP; keep SOAR-lite non-fatal for demo continuity.
-        return {"sent": False, "reason": f"smtp_error: {exc}"}
+        # Hosted containers may block outbound SMTP; try Postmark HTTPS fallback.
+        api_result = send_postmark_api_alert(event, recommendation, alert_type)
+        if api_result.get("sent"):
+            return api_result
+        return {"sent": False, "reason": f"smtp_error: {exc}; {api_result.get('reason', 'postmark_api_unavailable')}"}
+
+
+def postmark_api_token() -> str | None:
+    """Return Postmark server token for HTTPS API fallback."""
+    return os.getenv("POSTMARK_API_TOKEN") or smtp_password()
+
+
+def send_postmark_api_alert(event: dict[str, Any], recommendation: str, alert_type: str) -> dict[str, Any]:
+    """Send alert through Postmark HTTPS API when configured."""
+    token = postmark_api_token()
+    sender = alert_from_email()
+    recipient = alert_to_email()
+    if not token or not sender or not recipient:
+        return {"sent": False, "reason": "postmark_api_not_configured"}
+
+    body = "\n".join(
+        [
+            f"Alert timestamp: {now_utc_iso()}",
+            f"Alert type: {alert_type}",
+            f"Harm types: {event['digital_wellbeing'].get('harm_types', [])}",
+            f"Risk score: {event['digital_wellbeing'].get('risk_score')}",
+            f"Text hash: {event.get('text_hash')}",
+            f"Session ID: {event.get('session_id', '')}",
+            f"Model version: {event['digital_wellbeing'].get('model_version')}",
+            f"Recommendation: {recommendation}",
+        ]
+    )
+    payload = {
+        "From": sender,
+        "To": recipient,
+        "Subject": f"TextThreat {alert_type} alert",
+        "TextBody": body,
+    }
+    stream = os.getenv("POSTMARK_MESSAGE_STREAM")
+    if stream:
+        payload["MessageStream"] = stream
+
+    request = urllib.request.Request(
+        "https://api.postmarkapp.com/email",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-Postmark-Server-Token": token,
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            response_body = response.read().decode("utf-8", errors="replace")
+            return {"sent": 200 <= response.status < 300, "reason": f"postmark_api_status:{response.status}", "response": response_body}
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        return {"sent": False, "reason": f"postmark_api_http_error:{exc.code}", "response": body}
+    except urllib.error.URLError as exc:
+        return {"sent": False, "reason": f"postmark_api_connection_error:{exc.reason}"}
 
 
 def alert_row(
