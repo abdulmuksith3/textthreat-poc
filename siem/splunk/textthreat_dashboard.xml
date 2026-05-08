@@ -96,7 +96,7 @@
       <title>Co-occurrence Candidates: Toxicity + Stress in Same Session Window</title>
       <table>
         <search>
-          <query>index=textthreat event.module=textthreat digital_wellbeing.risk_score&gt;0.55 | spath path=digital_wellbeing.harm_types{} output=harm_type | eval harm_type=coalesce(harm_type, 'digital_wellbeing.harm_types{}', 'digital_wellbeing.harm_types') | mvexpand harm_type | eval is_toxicity=if(harm_type IN ("toxic","severe_toxic","obscene","threat","insult","identity_hate"),1,0) | eval is_stress=if(harm_type="stress",1,0) | bin _time span=30m | stats max(is_toxicity) as toxicity max(is_stress) as stress values(text_hash) as text_hashes max(digital_wellbeing.risk_score) as max_risk by session_id _time | where toxicity=1 AND stress=1 | sort - _time</query>
+          <query>index=textthreat event.module=textthreat digital_wellbeing.risk_score&gt;0.55 | spath path=digital_wellbeing.harm_types{} output=harm_type | eval harm_type=coalesce(harm_type, 'digital_wellbeing.harm_types{}', 'digital_wellbeing.harm_types') | mvexpand harm_type | eval is_toxicity=if(harm_type IN ("toxic","severe_toxic","obscene","threat","insult","identity_hate"),1,0) | eval is_stress=if(harm_type="stress",1,0) | bin _time span=30m | stats max(is_toxicity) as toxicity max(is_stress) as stress values(text_hash) as text_hashes max(digital_wellbeing.risk_score) as max_risk by session_id _time | eval cooccurrence_risk=min(max_risk+0.1,1.0) | where toxicity=1 AND stress=1 | sort - _time</query>
           <earliest>$time_range.earliest$</earliest>
           <latest>$time_range.latest$</latest>
         </search>

@@ -6,9 +6,10 @@ The hosted TextThreat demo uses Splunk Cloud as the primary SIEM dashboard.
 
 1. Create a Splunk Cloud free trial.
 2. Create an index named `textthreat`.
-3. Enable HTTP Event Collector.
-4. Create a HEC token with access to `index=textthreat`.
-5. In the hosted app, set:
+3. Create an optional alert index named `textthreat_alerts` if you want SOAR-lite to write alert records back to Splunk.
+4. Enable HTTP Event Collector.
+5. Create a HEC token with access to `index=textthreat`.
+6. In the hosted app, set:
 
 ```text
 SPLUNK_HEC_URL=https://<your-stack>.splunkcloud.com:8088/services/collector/event

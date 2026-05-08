@@ -14,9 +14,10 @@ from .utils import RESULTS_DIR, set_seed, write_json
 
 
 EPSILON_VALUES = [0.1, 0.5, 1.0, 2.0, 5.0]
+DEFAULT_SENSITIVITY = 0.056
 
 
-def gaussian_sigma(epsilon: float, delta: float = 1e-5, sensitivity: float = 0.1) -> float:
+def gaussian_sigma(epsilon: float, delta: float = 1e-5, sensitivity: float = DEFAULT_SENSITIVITY) -> float:
     """Return Gaussian mechanism sigma for output-level score perturbation."""
     if epsilon <= 0:
         raise ValueError("epsilon must be positive.")
@@ -28,7 +29,7 @@ def perturb_scores(
     epsilon: float,
     *,
     delta: float = 1e-5,
-    sensitivity: float = 0.1,
+    sensitivity: float = DEFAULT_SENSITIVITY,
     rng: np.random.Generator | None = None,
 ) -> tuple[np.ndarray, float]:
     """Add Gaussian noise to score outputs and clip to [0, 1]."""
@@ -44,7 +45,7 @@ def run_dp_experiment(
     *,
     epsilons: list[float] | None = None,
     delta: float = 1e-5,
-    sensitivity: float = 0.1,
+    sensitivity: float = DEFAULT_SENSITIVITY,
 ) -> dict[str, Any]:
     """Evaluate utility after output-level Gaussian perturbation."""
     epsilons = epsilons or EPSILON_VALUES
@@ -69,9 +70,22 @@ def run_dp_experiment(
         "demo": False,
         "delta": float(delta),
         "sensitivity": float(sensitivity),
+        "mechanism": "Gaussian output perturbation",
+        "mechanism_formula": "sigma = sqrt(2 * ln(1.25 / delta)) * sensitivity / epsilon",
+        "perturbation_target": "label probability outputs with downstream risk score clipping to [0, 1]",
+        "opacus_available": opacus_available(),
         "baseline_macro_f1": float(baseline_f1),
         "results": rows,
     }
+
+
+def opacus_available() -> bool:
+    """Return whether Opacus is installed in the current environment."""
+    try:
+        import opacus  # noqa: F401
+    except ImportError:
+        return False
+    return True
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -79,7 +93,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--sample", action="store_true", help="Use deterministic demo arrays.")
     parser.add_argument("--output", type=Path, default=RESULTS_DIR / "dp_results.json")
     parser.add_argument("--delta", type=float, default=1e-5)
-    parser.add_argument("--sensitivity", type=float, default=0.1)
+    parser.add_argument("--sensitivity", type=float, default=DEFAULT_SENSITIVITY)
     return parser
 
 

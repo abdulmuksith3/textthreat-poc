@@ -14,6 +14,7 @@ kafka-python
 fairlearn
 opacus
 imbalanced-learn
+iterative-stratification
 scipy
 joblib
 tqdm
@@ -22,3 +23,5 @@ pyyaml
 splunk-sdk
 peft
 mlflow
+shap
+seaborn
