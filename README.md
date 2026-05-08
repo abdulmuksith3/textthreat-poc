@@ -1,51 +1,623 @@
-# TextThreat
+﻿# TextThreat
 
-**TextThreat — AI-Powered Detection of Digital Well-Being Risks with Cybersecurity Analytics**
+**TextThreat - AI-Powered Detection of Digital Well-Being Risks with Cybersecurity Analytics**
 
-This repository contains the MSc thesis proof-of-concept for detecting digital well-being risk signals from social-media text and exporting them as SIEM-ready threat events.
+TextThreat is an MSc thesis proof-of-concept that detects digital well-being risk signals from social-media-style text, converts model output into a SIEM-ready JSON event, sends the event to Splunk Cloud, and triggers a lightweight SOAR-style escalation path.
 
-The live demo path is **Splunk-first**:
+The hosted demo is intentionally simple and reproducible:
 
 ```text
-user submits comment
--> TextThreat inference
--> schema-valid JSON event
--> Splunk HTTP Event Collector
--> Splunk dashboard
--> optional SOAR-lite alert
+Hugging Face Space / Gradio UI
+-> submit comment
+-> TextThreat model inference
+-> ECS-style TextThreat JSON event
+-> Splunk HEC ingestion
+-> Splunk Cloud dashboard
+-> inline SOAR-lite escalation
+-> CSV alert log and optional Postmark email
 ```
 
-## Current Implementation
+## Live Links
 
-- Jigsaw Toxic Comment multi-label harm labels:
-  `toxic`, `severe_toxic`, `obscene`, `threat`, `insult`, `identity_hate`
-- SVM + TF-IDF baseline training script.
-- DistilBERT training script for Jigsaw and Dreaddit stress classification.
-- Optional LoRA/PEFT and MLflow logging for thesis-parity experiments.
-- TextThreat JSON Schema Draft 7 threat-event format.
-- NDJSON export for SIEM ingestion.
-- Splunk HEC client and Gradio hosted demo app.
-- Splunk SPL query library and dashboard notes.
-- SOAR-lite alert logging/email.
-- Latency, calibration/ECE, output-level privacy perturbation, Fairlearn audit, and synthetic co-occurrence scripts.
-- Fast smoke test that runs without raw Kaggle data.
+| Component | Location |
+|---|---|
+| GitHub repository | https://github.com/abdulmuksith3/textthreat-poc |
+| Hosted demo UI | https://huggingface.co/spaces/abdulmuksith/textthreat-demo |
+| Jigsaw harm model | https://huggingface.co/abdulmuksith/textthreat-distilbert-jigsaw |
+| Dreaddit stress model | https://huggingface.co/abdulmuksith/textthreat-distilbert-dreaddit |
+| Splunk dashboard | Private Splunk Cloud tenant, index `textthreat` |
+| SOAR-lite email provider | Postmark HTTPS API fallback, configured through Space secrets |
 
-## Install
+## Demo Screenshots
+
+### Hosted Hugging Face Demo
+
+This is the public Gradio app hosted on Hugging Face Spaces.
+
+![TextThreat Hugging Face Space demo](docs/screenshots/huggingface-space-demo.png)
+
+### Submitted High-Risk Comment
+
+This shows a high-risk comment being scored, exported as a JSON event, sent to Splunk, and escalated by SOAR-lite.
+
+![TextThreat demo result with Splunk and SOAR-lite status](docs/screenshots/huggingface-demo-result.png)
+
+### Splunk Dashboard
+
+The Splunk dashboard is private to the configured Splunk Cloud tenant. After importing [textthreat_dashboard.xml](siem/splunk/textthreat_dashboard.xml), it should show:
+
+- `Total TextThreat Events`
+- `High Risk Events`
+- `Average Risk Score`
+- `Risk Score Time Series`
+- `Harm Type Counts`
+- `Events by Source Platform`
+- `Latest Submitted Events`
+- `Co-occurrence Candidates`
+
+The dashboard screenshot from the demo session corresponds to this imported dashboard and uses `index=textthreat`.
+
+## What The Demo Proves
+
+The live hosted demo proves the thesis pipeline end to end:
+
+| Thesis / system component | Implemented by |
+|---|---|
+| Social media text input | Gradio UI in [demo/app.py](demo/app.py) |
+| Jigsaw multi-label harm detection | `abdulmuksith/textthreat-distilbert-jigsaw` |
+| Dreaddit stress detection | `abdulmuksith/textthreat-distilbert-dreaddit` |
+| Event schema | [schema/textthreat_event_schema.json](schema/textthreat_event_schema.json), [schema.py](src/textthreat/schema.py) |
+| Splunk ingestion | [splunk_hec.py](src/textthreat/splunk_hec.py) |
+| Splunk dashboard | [siem/splunk/textthreat_dashboard.xml](siem/splunk/textthreat_dashboard.xml) |
+| SOAR-lite escalation | [soar_lite.py](soar_lite/soar_lite.py) |
+| Alert log | `experiments/results/soar_alerts_log.csv` |
+| Optional email dispatch | Postmark HTTPS API fallback from [soar_lite.py](soar_lite/soar_lite.py) |
+| Reproducible scripts | `scripts/`, `src/textthreat/`, `experiments/results/` |
+
+## Repository Structure
+
+```text
+textthreat-poc/
+├── app.py                              # Hugging Face Spaces entrypoint
+├── README.md                           # This reproduction guide
+├── requirements.txt                    # Python dependencies
+├── config/
+│   ├── settings.example.env            # Safe runtime config template
+│   └── settings.env                    # Local secrets file, ignored by Git
+├── data/
+│   ├── exports/                        # NDJSON event exports
+│   ├── jigsaw/                         # Put Jigsaw CSVs here locally
+│   ├── dreaddit/                       # Put Dreaddit CSVs here locally
+│   └── synthetic/                      # Synthetic co-occurrence sessions
+├── demo/
+│   └── app.py                          # Gradio UI and live demo workflow
+├── docs/
+│   └── screenshots/                    # README screenshots
+├── experiments/
+│   └── results/                        # JSON/CSV evidence artifacts
+├── models/
+│   ├── distilbert_jigsaw/              # Local lightweight metadata/tokenizer files
+│   ├── distilbert_dreaddit/            # Local lightweight metadata/tokenizer files
+│   └── svm_tfidf/                      # Classical SVM baseline artifacts
+├── notebooks/
+│   └── TextThreat_Colab_Training_All.ipynb
+├── schema/
+│   └── textthreat_event_schema.json    # JSON Schema Draft 7 event validation
+├── scripts/
+│   ├── smoke_test.py                   # Fast local verification
+│   ├── generate_sample_events.py       # Writes sample NDJSON events
+│   ├── setup_splunk_demo.py            # Sends sample events / optional setup helper
+│   ├── check_model_artifacts.py        # Checks model folder completeness
+│   └── upload_models_to_hf.py          # Optional model upload helper
+├── siem/
+│   └── splunk/                         # SPL queries and dashboard XML
+├── soar_lite/
+│   ├── soar_lite.py                    # Inline SOAR-lite + optional poller
+│   ├── playbook.yml                    # Escalation recommendations
+│   └── README.md
+└── src/textthreat/
+    ├── inference.py                    # Runtime model loading and scoring
+    ├── schema.py                       # Event construction and validation
+    ├── splunk_hec.py                   # Splunk HTTP Event Collector client
+    ├── train_svm.py                    # SVM + TF-IDF baseline
+    ├── train_distilbert.py             # DistilBERT Jigsaw/Dreaddit training
+    ├── evaluate.py                     # Classification metrics
+    ├── calibration.py                  # ECE calculations
+    ├── latency.py                      # Latency profiling
+    ├── dp_output.py                    # Output-level privacy perturbation
+    ├── fairness.py                     # Fairlearn audit/demo mode
+    └── cooccurrence.py                 # Synthetic co-occurrence evaluation
+```
+
+## Runtime Architecture
+
+```text
+User submits text in Gradio
+        |
+        v
+TextThreatAnalyzer loads two Hugging Face models
+        |
+        |-- Jigsaw DistilBERT: toxic, severe_toxic, obscene, threat, insult, identity_hate
+        |-- Dreaddit DistilBERT: stress
+        |
+        v
+schema.build_event() creates validated TextThreat JSON
+        |
+        v
+Splunk HEC receives event in index=textthreat
+        |
+        v
+Splunk dashboard reads the event through SPL
+        |
+        v
+SOAR-lite threshold rule checks risk_score > 0.8
+        |
+        |-- writes alert CSV
+        |-- sends Postmark email when configured
+```
+
+## Event Schema Summary
+
+Every live event follows the TextThreat JSON schema and includes:
+
+```json
+{
+  "@timestamp": "2026-05-08T13:54:50.313824+00:00",
+  "event": {
+    "kind": "signal",
+    "module": "textthreat",
+    "category": ["digital_wellbeing", "threat_signal"]
+  },
+  "text_hash": "sha256 hash of raw text",
+  "digital_wellbeing": {
+    "harm_types": ["toxic", "obscene", "insult"],
+    "risk_score": 0.982702,
+    "confidence": 0.982702,
+    "model_version": "distilbert-jigsaw-v1",
+    "scores": {
+      "toxic": 0.982702,
+      "severe_toxic": 0.184931,
+      "obscene": 0.811199,
+      "threat": 0.097398,
+      "insult": 0.887944,
+      "identity_hate": 0.119561,
+      "stress": 0.526596
+    }
+  },
+  "source_platform": "demo_form",
+  "session_id": "demo-session"
+}
+```
+
+Raw comment text is not exported to Splunk. The event stores `text_hash` for analyst lookup and reproducibility without storing the original text.
+
+## Quick Reproduction Path
+
+Use this path when you only want to verify the repository locally without training models.
+
+### 1. Clone The Repository
 
 ```bash
+git clone https://github.com/abdulmuksith3/textthreat-poc.git
+cd textthreat-poc
+git checkout next-phase
+```
+
+### 2. Create A Python Environment
+
+Windows PowerShell:
+
+```powershell
 python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install --upgrade pip
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-macOS/Linux activation:
+macOS/Linux:
 
 ```bash
+python -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-## Dataset Setup
+### 3. Run The Smoke Test
+
+```bash
+python scripts/smoke_test.py
+```
+
+Expected result:
+
+```text
+TextThreat smoke test passed.
+```
+
+Expected files:
+
+```text
+data/exports/sample_textthreat_events.ndjson
+experiments/results/classification_metrics.json
+experiments/results/latency_metrics.json
+experiments/results/dp_results.json
+experiments/results/fairness_results.json
+experiments/results/cooccurrence_results.json
+experiments/results/soar_alerts_log.csv
+```
+
+### 4. Run Individual Evidence Scripts
+
+```bash
+python scripts/generate_sample_events.py
+python -m src.textthreat.export_events --sample
+python -m src.textthreat.evaluate --sample
+python -m src.textthreat.latency --sample
+python -m src.textthreat.dp_output --sample
+python -m src.textthreat.fairness --sample
+python -m src.textthreat.cooccurrence --sample
+python soar_lite/soar_lite.py --demo
+```
+
+These commands run quickly and do not require Kaggle datasets.
+
+## Local Demo Setup
+
+### 1. Create A Local Env File
+
+Copy the example:
+
+```powershell
+Copy-Item config\settings.example.env config\settings.env
+```
+
+`config/settings.env` is ignored by Git. Put secrets there, never in `settings.example.env`.
+
+### 2. Minimum Local Demo Variables
+
+```env
+TEXTTHREAT_TOXICITY_MODEL_ID=abdulmuksith/textthreat-distilbert-jigsaw
+TEXTTHREAT_STRESS_MODEL_ID=abdulmuksith/textthreat-distilbert-dreaddit
+TEXTTHREAT_EVENT_THRESHOLD=0.55
+
+SPLUNK_HEC_URL=https://<your-stack>.splunkcloud.com:8088/services/collector/event
+SPLUNK_HEC_TOKEN=<your-hec-token>
+SPLUNK_INDEX=textthreat
+SPLUNK_SOURCETYPE=_json
+SPLUNK_SOURCE=textthreat-demo
+SPLUNK_VERIFY_SSL=true
+SPLUNK_HEC_CHANNEL=11111111-1111-4111-8111-111111111111
+
+SOAR_LITE_ENABLED=1
+SOAR_LITE_THRESHOLD=0.8
+```
+
+### 3. Optional Postmark Email Variables
+
+Use these if you want SOAR-lite to send email alerts.
+
+```env
+POSTMARK_API_TOKEN=<postmark-server-token>
+POSTMARK_MESSAGE_STREAM=outbound
+ALERT_TO_EMAIL=<recipient-email>
+ALERT_FROM_EMAIL=<verified-postmark-sender-email>
+```
+
+The app can still run without email. If email is not configured or fails, SOAR-lite still logs alerts and returns `email_sent=false` with `email_reason`.
+
+### 4. Start The App Locally
+
+```bash
+python app.py
+```
+
+Open:
+
+```text
+http://127.0.0.1:7860
+```
+
+The first run can take 10-30 seconds because the two Hugging Face models are downloaded and warmed up.
+
+## Hosted Hugging Face Space Setup
+
+The current hosted Space is:
+
+```text
+https://huggingface.co/spaces/abdulmuksith/textthreat-demo
+```
+
+The Space runs `app.py`, which imports the Gradio app from [demo/app.py](demo/app.py).
+
+### Required Space Variables
+
+Set these as non-secret Space variables:
+
+```text
+TEXTTHREAT_TOXICITY_MODEL_ID=abdulmuksith/textthreat-distilbert-jigsaw
+TEXTTHREAT_STRESS_MODEL_ID=abdulmuksith/textthreat-distilbert-dreaddit
+TEXTTHREAT_EVENT_THRESHOLD=0.55
+```
+
+### Required Space Secrets
+
+Set these as Space secrets:
+
+```text
+SPLUNK_HEC_URL
+SPLUNK_HEC_TOKEN
+SPLUNK_INDEX
+SPLUNK_SOURCETYPE
+SPLUNK_SOURCE
+SPLUNK_VERIFY_SSL
+SPLUNK_HEC_CHANNEL
+SOAR_LITE_ENABLED
+SOAR_LITE_THRESHOLD
+```
+
+### Optional Email Secrets
+
+Set these if using Postmark email escalation:
+
+```text
+POSTMARK_API_TOKEN
+POSTMARK_MESSAGE_STREAM
+ALERT_TO_EMAIL
+ALERT_FROM_EMAIL
+```
+
+SMTP variables are also supported, but many hosted containers block outbound SMTP. The recommended hosted path is Postmark HTTPS API.
+
+### Deploy Or Update The Space
+
+The simplest way is to upload the runtime files using `huggingface_hub`.
+
+PowerShell:
+
+```powershell
+$env:HF_TOKEN="<your-hugging-face-write-token>"
+@'
+from huggingface_hub import HfApi
+api = HfApi()
+api.upload_folder(
+    folder_path='.',
+    repo_id='abdulmuksith/textthreat-demo',
+    repo_type='space',
+    allow_patterns=[
+        'app.py',
+        'README.md',
+        'requirements.txt',
+        'demo/**',
+        'src/textthreat/**',
+        'schema/textthreat_event_schema.json',
+        'soar_lite/**',
+        'siem/splunk/**',
+        'config/settings.example.env',
+        'docs/screenshots/**',
+    ],
+    commit_message='Deploy TextThreat demo app',
+)
+api.restart_space('abdulmuksith/textthreat-demo')
+'@ | python -
+```
+
+Do not upload raw datasets, local `.env` files, `config/settings.env`, or model weights from your machine.
+
+## Splunk Cloud Setup
+
+### 1. Create The Index
+
+In Splunk Cloud, create an index named:
+
+```text
+textthreat
+```
+
+### 2. Create An HEC Token
+
+In Splunk Cloud:
+
+```text
+Settings -> Data Inputs -> HTTP Event Collector -> New Token
+```
+
+Recommended values:
+
+```text
+Source type: _json
+Index: textthreat
+```
+
+Your HEC endpoint usually looks like:
+
+```text
+https://<your-stack>.splunkcloud.com:8088/services/collector/event
+```
+
+Some Splunk Cloud configurations require an HEC acknowledgement channel. This repo supports that using:
+
+```text
+SPLUNK_HEC_CHANNEL=11111111-1111-4111-8111-111111111111
+```
+
+### 3. Send A Test Event
+
+With `config/settings.env` configured locally:
+
+```bash
+python scripts/setup_splunk_demo.py --events-only
+```
+
+Then search in Splunk:
+
+```spl
+index=textthreat event.module=textthreat
+```
+
+### 4. Import The Dashboard
+
+Use the dashboard XML here:
+
+```text
+siem/splunk/textthreat_dashboard.xml
+```
+
+In Splunk Cloud:
+
+```text
+Dashboards -> Create New Dashboard -> Classic XML / Source -> paste XML
+```
+
+If your Splunk UI uses Dashboard Studio only, recreate the panels using [spl_queries.md](siem/splunk/spl_queries.md).
+
+### 5. Useful SPL Searches
+
+Latest events:
+
+```spl
+index=textthreat event.module=textthreat
+| sort - _time
+| table _time text_hash digital_wellbeing.risk_score digital_wellbeing.confidence source_platform session_id
+```
+
+High-risk events:
+
+```spl
+index=textthreat event.module=textthreat digital_wellbeing.risk_score>0.8
+| table _time text_hash digital_wellbeing.harm_types{} digital_wellbeing.risk_score source_platform session_id
+```
+
+Harm type counts:
+
+```spl
+index=textthreat event.module=textthreat
+| spath path=digital_wellbeing.harm_types{} output=harm_type
+| mvexpand harm_type
+| stats count by harm_type
+| sort - count
+```
+
+Risk time series:
+
+```spl
+index=textthreat event.module=textthreat
+| timechart span=5m avg(digital_wellbeing.risk_score) as avg_risk perc95(digital_wellbeing.risk_score) as p95_risk
+```
+
+## SOAR-lite Escalation
+
+SOAR-lite is implemented in [soar_lite.py](soar_lite/soar_lite.py).
+
+The hosted demo uses inline escalation:
+
+```text
+comment submitted
+-> event built
+-> event sent to Splunk
+-> process_events([event]) runs immediately
+-> high-risk events create alert rows
+-> optional Postmark email is sent
+```
+
+Threshold rule:
+
+```text
+risk_score > SOAR_LITE_THRESHOLD
+```
+
+Default threshold:
+
+```text
+SOAR_LITE_THRESHOLD=0.8
+```
+
+Alert rows include:
+
+```text
+alert_timestamp
+alert_type
+text_hash
+session_id
+harm_types
+risk_score
+model_version
+recommendation
+email_sent
+email_reason
+```
+
+### Email Behavior
+
+The hosted demo uses Postmark HTTPS fallback because many hosted runtimes block SMTP.
+
+Successful email example:
+
+```json
+{
+  "email_sent": true,
+  "email_reason": "postmark_api_status:200"
+}
+```
+
+If email fails, the pipeline still completes and records the reason:
+
+```json
+{
+  "email_sent": false,
+  "email_reason": "postmark_api_http_error:422: Sender signature not found"
+}
+```
+
+### Optional Polling Daemon
+
+A Splunk polling mode is included for thesis-parity operation, but it is not required for the free hosted demo.
+
+```bash
+python soar_lite/soar_lite.py --poll-splunk --interval 30
+```
+
+One-shot mode:
+
+```bash
+python soar_lite/soar_lite.py --poll-splunk --once
+```
+
+This requires Splunk management/search API access, which is separate from HEC ingestion.
+
+## Model Details
+
+### Jigsaw Harm Classifier
+
+```text
+Model: abdulmuksith/textthreat-distilbert-jigsaw
+Task: multi-label toxic comment classification
+Base: DistilBERT
+Labels: toxic, severe_toxic, obscene, threat, insult, identity_hate
+```
+
+Used for the main harm labels in `digital_wellbeing.harm_types`.
+
+### Dreaddit Stress Classifier
+
+```text
+Model: abdulmuksith/textthreat-distilbert-dreaddit
+Task: stress classification
+Base: DistilBERT
+Labels: non-stress / stress
+```
+
+Used to add the `stress` score and support stress/toxicity co-occurrence analysis.
+
+### Safety Lexical Overlay
+
+The demo also applies a transparent lexical overlay for explicit high-risk phrases such as direct threats or self-harm language. The raw model scores remain visible in the JSON output.
+
+## Training Reproduction
+
+Training is optional for running the hosted demo because trained models are already hosted on Hugging Face.
+
+### Dataset Locations
 
 Raw datasets are not committed.
 
@@ -65,245 +637,160 @@ data/dreaddit/dreaddit-train.csv
 data/dreaddit/dreaddit-test.csv
 ```
 
-The smoke-test and demo scripts can run in sample mode without these files.
-
-## Fast Local Verification
-
-```bash
-python scripts/smoke_test.py
-python scripts/generate_sample_events.py
-python -m src.textthreat.export_events --sample
-python -m src.textthreat.latency --sample
-python -m src.textthreat.dp_output --sample
-python -m src.textthreat.fairness --sample
-python -m src.textthreat.cooccurrence --sample
-```
-
-Expected outputs:
-
-```text
-data/exports/sample_textthreat_events.ndjson
-experiments/results/classification_metrics.json
-experiments/results/latency_metrics.json
-experiments/results/dp_results.json
-experiments/results/fairness_results.json
-experiments/results/cooccurrence_results.json
-experiments/results/soar_alerts_log.csv
-```
-
-## Training Workflow
-
-Training runs locally or in Colab. The hosted demo should load trained artifacts and perform inference only.
-
-SVM baseline:
+### Train SVM Baseline
 
 ```bash
 python -m src.textthreat.train_svm
 ```
 
-DistilBERT Jigsaw classifier:
+Quick sample run:
+
+```bash
+python -m src.textthreat.train_svm --sample-size 2000 --calibration-cv 3
+```
+
+Outputs:
+
+```text
+models/svm_tfidf/
+experiments/results/svm_metrics.json
+```
+
+### Train DistilBERT Jigsaw
 
 ```bash
 python -m src.textthreat.train_distilbert --task jigsaw --epochs 1
 ```
 
-Dreaddit stress classifier:
+Quick sample run:
+
+```bash
+python -m src.textthreat.train_distilbert --task jigsaw --sample-size 1000 --epochs 1
+```
+
+Outputs:
+
+```text
+models/distilbert_jigsaw/
+experiments/results/distilbert_metrics.json
+```
+
+### Train DistilBERT Dreaddit
 
 ```bash
 python -m src.textthreat.train_distilbert --task dreaddit --epochs 1
 ```
 
-For a quick training rehearsal:
-
-```bash
-python -m src.textthreat.train_svm --sample-size 2000 --calibration-cv 3
-python -m src.textthreat.train_distilbert --task jigsaw --sample-size 1000 --epochs 1
-```
-
-Training outputs are written under:
+Outputs:
 
 ```text
-models/
-experiments/results/
-mlruns/
+models/distilbert_dreaddit/
+experiments/results/dreaddit_metrics.json
 ```
 
-Large weights, raw datasets, and MLflow run folders are ignored by Git.
+### Colab Notebook
 
-When LoRA is enabled, the training script merges the adapters into full Hugging Face model folders before saving. A valid final DistilBERT artifact contains `config.json`, `model.safetensors`, and tokenizer files. If you have adapter-only folders from an older Colab run, repair them before zipping:
-
-```bash
-python scripts/merge_lora_artifacts.py --root .
-python scripts/check_model_artifacts.py --root .
-```
-
-The hosted demo uses stable model IDs:
+For GPU training, use:
 
 ```text
-TEXTTHREAT_TOXICITY_MODEL_ID=abdulmuksith/textthreat-distilbert-jigsaw
-TEXTTHREAT_STRESS_MODEL_ID=abdulmuksith/textthreat-distilbert-dreaddit
+notebooks/TextThreat_Colab_Training_All.ipynb
 ```
 
-## Hosted Splunk Demo
-
-Recommended free-hosted setup:
-
-- App: Hugging Face Spaces using `app.py` / `demo/app.py`.
-- SIEM: Splunk Cloud free trial.
-- Ingestion: Splunk HTTP Event Collector.
-
-Configure secrets in the host:
+Recommended Colab settings:
 
 ```text
-TEXTTHREAT_TOXICITY_MODEL_ID=abdulmuksith/textthreat-distilbert-jigsaw
-TEXTTHREAT_STRESS_MODEL_ID=abdulmuksith/textthreat-distilbert-dreaddit
-TEXTTHREAT_EVENT_THRESHOLD=0.55
-SPLUNK_HEC_URL=https://<your-stack>.splunkcloud.com:8088/services/collector/event
-SPLUNK_HEC_TOKEN=<token>
-SPLUNK_INDEX=textthreat
-SPLUNK_SOURCETYPE=_json
-SPLUNK_SOURCE=textthreat-demo
-SPLUNK_HEC_CHANNEL=11111111-1111-4111-8111-111111111111
-SMTP_HOST=<smtp-host>
-SMTP_PORT=587
-SMTP_USERNAME=<smtp-username>
-SMTP_PASSWORD=<smtp-password>
-ALERT_TO_EMAIL=<recipient-email>
-ALERT_FROM_EMAIL=<sender-email>
-SOAR_LITE_ENABLED=1
-SOAR_LITE_THRESHOLD=0.8
+Runtime -> Change runtime type -> GPU
+Branch -> next-phase
+QUICK_TEST=True first
+QUICK_TEST=False for final evidence run
 ```
 
-`TEXTTHREAT_EVENT_THRESHOLD` controls when a model score becomes an active `digital_wellbeing.harm_types` label in the live demo. The default demo threshold is `0.55` to avoid treating borderline, poorly calibrated scores as active harms. The raw per-label scores are still included in the exported event JSON.
+## Evaluation Artifacts
 
-The hosted proof-of-concept also applies a transparent safety lexical overlay for explicit high-risk phrases such as direct threats, self-harm language, and profanity. This keeps the live SIEM demo responsive to obvious safety cases while the raw model scores remain visible in the exported JSON.
+| Artifact | Command | Output |
+|---|---|---|
+| Classification metrics | `python -m src.textthreat.evaluate --sample` | `experiments/results/classification_metrics.json` |
+| Latency | `python -m src.textthreat.latency --sample` | `experiments/results/latency_metrics.json` |
+| Calibration / ECE | included in evaluation | `classification_metrics.json` |
+| Output-level DP perturbation | `python -m src.textthreat.dp_output --sample` | `experiments/results/dp_results.json` |
+| Fairness audit/demo | `python -m src.textthreat.fairness --sample` | `experiments/results/fairness_results.json` |
+| Synthetic co-occurrence | `python -m src.textthreat.cooccurrence --sample` | `experiments/results/cooccurrence_results.json` |
+| SOAR-lite alerts | `python soar_lite/soar_lite.py --demo` | `experiments/results/soar_alerts_log.csv` |
 
-Run locally:
+The DP script is an output-level privacy-preserving perturbation experiment, not full training-level DP-SGD.
 
-```bash
-python app.py
-```
-
-Demo workflow:
+The co-occurrence evaluation is synthetic and is marked as:
 
 ```text
-1. Open the Gradio app.
-2. Submit a comment.
-3. The app scores harm/stress risk.
-4. The app hashes the text and builds a TextThreat event.
-5. The event is validated against schema/textthreat_event_schema.json.
-6. The event is sent to Splunk HEC if credentials are configured.
-7. Splunk dashboard panels update from index=textthreat.
-8. SOAR-lite can log or email alerts for risk_score > 0.8.
+evaluation_type = synthetic_session_windows
 ```
 
-SOAR-lite escalation is enabled in the demo by default. Set `SOAR_LITE_THRESHOLD`
-to control the escalation threshold and `SOAR_LITE_ENABLED=0` to disable it for
-dashboard-only rehearsals. The hosted proof-of-concept uses inline SOAR-lite
-escalation from the submit action, which keeps the free demo responsive without a
-separate always-on worker.
+## Example Demo Comments
 
-If no trained model is configured, the app uses a clearly marked demo fallback scorer. For the final thesis demo, configure trained model IDs.
+Use these to exercise the demo:
 
-By default the local app does not auto-load local model folders, so the submit button responds quickly during setup. To force local model loading from `models/distilbert_jigsaw/`, set:
+| Comment | Expected behavior |
+|---|---|
+| `I love this community, everyone here is helpful and kind.` | Low risk, no SOAR alert |
+| `You are useless and disgusting, shut up.` | Toxic / insult likely, may or may not exceed SOAR threshold |
+| `You idiot, go die.` | High risk, toxic/obscene/insult likely, SOAR alert likely |
+| `I swear I will kill you.` | High risk, threat likely, SOAR alert likely |
+| `I feel overwhelmed, exhausted, and I cannot handle this anymore.` | Stress score should rise, may not trigger SOAR unless risk exceeds threshold |
 
-```powershell
-$env:TEXTTHREAT_AUTO_LOAD_LOCAL_MODELS="1"
-```
+Use the same `session_id` across multiple related comments when demonstrating session-level correlation.
 
-For a hosted demo, prefer an explicit model ID:
+## Troubleshooting
 
-```powershell
-$env:TEXTTHREAT_TOXICITY_MODEL_ID="your-hf-username/textthreat-distilbert-jigsaw"
-```
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Gradio returns 500 on `/run/predict` | Space running stale build or endpoint mismatch | Restart Space and confirm `/gradio_api/info` exposes `/predict` |
+| Splunk says skipped | HEC env vars missing | Set `SPLUNK_HEC_URL`, `SPLUNK_HEC_TOKEN`, `SPLUNK_INDEX` |
+| Splunk HEC returns invalid channel | HEC indexer acknowledgement requires channel | Set `SPLUNK_HEC_CHANNEL` to a UUID-like value |
+| Splunk dashboard has no harm counts | Array field needs `spath` parsing | Use the SPL in [spl_queries.md](siem/splunk/spl_queries.md) |
+| `email_sent=false` with SMTP timeout | Hosted runtime blocks SMTP | Use Postmark HTTPS API variables |
+| Postmark API returns 422 | Sender, stream, or token validation issue | Verify `ALERT_FROM_EMAIL`, server token, and `POSTMARK_MESSAGE_STREAM` |
+| First request is slow | Models are downloading/warming | Wait for warmup logs; later requests are faster |
+| HF Hub rate warning appears | No HF token configured | Optional: add `HF_TOKEN` as Space secret |
 
-## Splunk Dashboard
+## Security Notes
 
-See:
+Never commit these files or values:
 
 ```text
-siem/splunk/spl_queries.md
-siem/splunk/dashboard_notes.md
+.env
+.env.*
+config/settings.env
+config/*.local.env
+SPLUNK_HEC_TOKEN
+POSTMARK_API_TOKEN
+SMTP_PASSWORD
+HF_TOKEN
+raw Kaggle datasets
+large model weights
 ```
 
-High-risk SPL:
-
-```spl
-index=textthreat event.module=textthreat digital_wellbeing.risk_score>0.8
-| table _time text_hash digital_wellbeing.harm_types digital_wellbeing.risk_score digital_wellbeing.confidence source_platform session_id
-```
-
-Harm type counts:
-
-```spl
-index=textthreat event.module=textthreat
-| mvexpand digital_wellbeing.harm_types
-| stats count by digital_wellbeing.harm_types
-```
-
-Risk score time series:
-
-```spl
-index=textthreat event.module=textthreat
-| timechart span=30m avg(digital_wellbeing.risk_score) as avg_risk perc95(digital_wellbeing.risk_score) as p95_risk
-```
-
-## SOAR-lite
-
-Run the local SOAR-lite demo:
-
-```bash
-python soar_lite/soar_lite.py --demo
-```
-
-Without SMTP settings, alerts are written to:
-
-```text
-experiments/results/soar_alerts_log.csv
-```
-
-With SMTP settings, high-risk alerts can be emailed using the variables in `config/settings.example.env`.
-
-In the live Gradio demo, SOAR-lite runs immediately after the event is built and
-sent to Splunk. If the event risk score is above `SOAR_LITE_THRESHOLD`, the demo
-returns the escalation result and writes an alert row to:
-
-```text
-experiments/results/soar_alerts_log.csv
-```
-
-An optional Splunk polling daemon is also included for thesis-parity operation when
-Splunk search API access is available:
-
-```bash
-python soar_lite/soar_lite.py --poll-splunk --interval 30
-```
-
-The poller queries the configured Splunk index, applies threshold escalation and
-30-minute same-session toxicity/stress co-occurrence checks, and dispatches the same
-CSV/email alert format. For the free hosted demo, use the inline escalation path.
+If a token is pasted into chat, logs, screenshots, or a public issue, rotate it.
 
 ## Thesis Artifact Mapping
 
 | Thesis component | Repo artifact |
 |---|---|
-| A1 SVM baseline | `src/textthreat/train_svm.py`, `experiments/results/svm_metrics.json` |
-| A1 DistilBERT | `src/textthreat/train_distilbert.py`, `models/distilbert_jigsaw/` |
-| Jigsaw multi-label classification | `src/textthreat/constants.py`, `src/textthreat/train_distilbert.py` |
-| Dreaddit stress classification | `src/textthreat/train_distilbert.py --task dreaddit`, `experiments/results/dreaddit_metrics.json` |
-| A2 Schema | `schema/textthreat_event_schema.json`, `src/textthreat/schema.py` |
-| NDJSON export | `src/textthreat/export_events.py`, `data/exports/sample_textthreat_events.ndjson` |
-| A3 Splunk SIEM | `src/textthreat/splunk_hec.py`, `siem/splunk/`, `demo/app.py` |
-| A4 SOAR-lite | `soar_lite/soar_lite.py`, `soar_lite/playbook.yml` |
-| RQ1 metrics | `src/textthreat/evaluate.py`, `experiments/results/classification_metrics.json` |
-| RQ2 co-occurrence | `src/textthreat/cooccurrence.py`, `experiments/results/cooccurrence_results.json` |
-| RQ3 latency | `src/textthreat/latency.py`, `experiments/results/latency_metrics.json` |
-| RQ4 DP/fairness | `src/textthreat/dp_output.py`, `src/textthreat/fairness.py` |
-| Reproducibility | `scripts/smoke_test.py`, `scripts/run_all_local.py`, dataset READMEs |
+| A1 SVM baseline | [train_svm.py](src/textthreat/train_svm.py), `experiments/results/svm_metrics.json` |
+| A1 DistilBERT | [train_distilbert.py](src/textthreat/train_distilbert.py), hosted Hugging Face models |
+| Jigsaw multi-label classification | [constants.py](src/textthreat/constants.py), Jigsaw model |
+| Dreaddit stress classification | [train_distilbert.py](src/textthreat/train_distilbert.py), Dreaddit model |
+| A2 Schema | [textthreat_event_schema.json](schema/textthreat_event_schema.json), [schema.py](src/textthreat/schema.py) |
+| NDJSON export | [export_events.py](src/textthreat/export_events.py), `data/exports/sample_textthreat_events.ndjson` |
+| A3 Splunk SIEM | [splunk_hec.py](src/textthreat/splunk_hec.py), [siem/splunk](siem/splunk), [demo/app.py](demo/app.py) |
+| A4 SOAR-lite | [soar_lite.py](soar_lite/soar_lite.py), [playbook.yml](soar_lite/playbook.yml) |
+| RQ1 metrics | [evaluate.py](src/textthreat/evaluate.py), `classification_metrics.json` |
+| RQ2 co-occurrence | [cooccurrence.py](src/textthreat/cooccurrence.py), `cooccurrence_results.json` |
+| RQ3 latency | [latency.py](src/textthreat/latency.py), `latency_metrics.json` |
+| RQ4 DP/fairness | [dp_output.py](src/textthreat/dp_output.py), [fairness.py](src/textthreat/fairness.py) |
+| Reproducibility | [smoke_test.py](scripts/smoke_test.py), [run_all_local.py](scripts/run_all_local.py), dataset READMEs |
 
-## Privacy And Scope Notes
+## Proof-Of-Concept Scope
 
-- Exported SIEM events use `text_hash`; raw comment text is not stored in sample exports.
-- The DP experiment is an **output-level privacy-preserving perturbation experiment**, not full formal training-level DP-SGD.
-- Synthetic co-occurrence evaluation is marked as `synthetic_session_windows`.
-- This is a thesis proof-of-concept, not an enterprise production deployment.
+TextThreat is a thesis proof-of-concept. It demonstrates feasibility of AI-assisted digital well-being risk detection with cybersecurity analytics patterns. It is not an enterprise moderation platform, and human review remains part of the intended workflow.
+
+The hosted demo deliberately uses inline SOAR-lite escalation because it is simple to reproduce on free hosting. The optional polling daemon is included for environments that can provide always-on workers and Splunk search API access.
