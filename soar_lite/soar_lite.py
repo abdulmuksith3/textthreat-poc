@@ -130,7 +130,13 @@ def send_email_alert(event: dict[str, Any], recommendation: str, alert_type: str
         return {"sent": False, "reason": f"smtp_error: {exc}"}
 
 
-def alert_row(event: dict[str, Any], alert_type: str, recommendation: str, email_sent: bool) -> dict[str, Any]:
+def alert_row(
+    event: dict[str, Any],
+    alert_type: str,
+    recommendation: str,
+    email_sent: bool,
+    email_reason: str = "",
+) -> dict[str, Any]:
     """Build a CSV alert row."""
     return {
         "alert_timestamp": now_utc_iso(),
@@ -142,6 +148,7 @@ def alert_row(event: dict[str, Any], alert_type: str, recommendation: str, email
         "model_version": event.get("digital_wellbeing", {}).get("model_version"),
         "recommendation": recommendation,
         "email_sent": email_sent,
+        "email_reason": email_reason,
     }
 
 
@@ -158,6 +165,7 @@ def append_alert_log(rows: list[dict[str, Any]], path: Path = ALERT_LOG_PATH) ->
         "model_version",
         "recommendation",
         "email_sent",
+        "email_reason",
     ]
     exists = path.exists()
     with path.open("a", newline="", encoding="utf-8") as handle:
@@ -180,7 +188,15 @@ def process_events(events: list[dict[str, Any]], threshold: float = HIGH_RISK_TH
         seen_hashes.add(key)
         recommendation = recommendation_for(event, playbook, "threshold")
         email_result = send_email_alert(event, recommendation, "threshold")
-        alert_rows.append(alert_row(event, "threshold", recommendation, bool(email_result.get("sent"))))
+        alert_rows.append(
+            alert_row(
+                event,
+                "threshold",
+                recommendation,
+                bool(email_result.get("sent")),
+                str(email_result.get("reason", "")),
+            )
+        )
     alert_rows.extend(process_cooccurrence_alerts(events, playbook))
     if alert_rows:
         append_alert_log(alert_rows)
@@ -265,7 +281,15 @@ def process_cooccurrence_alerts(
                 aggregate = build_cooccurrence_event(session_id, toxicity_event, stress_event)
                 recommendation = recommendation_for(aggregate, playbook, "co_occurrence")
                 email_result = send_email_alert(aggregate, recommendation, "co_occurrence")
-                alert_rows.append(alert_row(aggregate, "co_occurrence", recommendation, bool(email_result.get("sent"))))
+                alert_rows.append(
+                    alert_row(
+                        aggregate,
+                        "co_occurrence",
+                        recommendation,
+                        bool(email_result.get("sent")),
+                        str(email_result.get("reason", "")),
+                    )
+                )
                 break
     return alert_rows
 
