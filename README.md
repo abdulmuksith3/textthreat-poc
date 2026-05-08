@@ -200,7 +200,6 @@ Use this path when you only want to verify the repository locally without traini
 ```bash
 git clone https://github.com/abdulmuksith3/textthreat-poc.git
 cd textthreat-poc
-git checkout next-phase
 ```
 
 ### 2. Create A Python Environment
@@ -700,7 +699,7 @@ Recommended Colab settings:
 
 ```text
 Runtime -> Change runtime type -> GPU
-Branch -> next-phase
+Repository -> https://github.com/abdulmuksith3/textthreat-poc
 QUICK_TEST=True first
 QUICK_TEST=False for final evidence run
 ```
