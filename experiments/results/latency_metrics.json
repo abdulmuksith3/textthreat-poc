@@ -1,43 +1,46 @@
 {
-  "demo": true,
-  "iterations": 25,
-  "mode": "sample",
+  "demo": false,
+  "include_soar": false,
+  "include_splunk": false,
+  "iterations": 1000,
+  "mode": "real_model_pipeline",
   "model_version": "distilbert-jigsaw-v1",
   "stages": {
     "detection_to_export": {
-      "median_seconds": 0.0007081809999363031,
-      "p95_seconds": 0.0008567353999751501,
-      "samples": 25
+      "median_seconds": 0.00041480001527816057,
+      "p95_seconds": 0.00048801499360706657,
+      "samples": 1000
     },
     "json_serialization_schema_validation": {
-      "median_seconds": 0.0007000509999670612,
-      "p95_seconds": 0.0008475764001559579,
-      "samples": 25
+      "median_seconds": 0.0003960000176448375,
+      "p95_seconds": 0.0004631150310160592,
+      "samples": 1000
     },
     "model_inference": {
-      "median_seconds": 6.181000117067015e-06,
-      "p95_seconds": 7.2315998295380265e-06,
-      "samples": 25
+      "median_seconds": 1.090002479031682e-05,
+      "p95_seconds": 1.7600017599761486e-05,
+      "samples": 1000
     },
     "preprocessing": {
-      "median_seconds": 1.1470001481939107e-06,
-      "p95_seconds": 1.5427998732775447e-06,
-      "samples": 25
+      "median_seconds": 6.599992047995329e-06,
+      "p95_seconds": 1.0505018872208889e-05,
+      "samples": 1000
     },
-    "siem_ingestion_simulation": {
-      "median_seconds": 0.0010831990002770908,
-      "p95_seconds": 0.0017741792000379056,
-      "samples": 25
+    "soar_lite_dispatch": {
+      "median_seconds": 1.00000761449337e-07,
+      "p95_seconds": 2.00001522898674e-07,
+      "samples": 1000
     },
-    "soar_dispatch_simulation": {
-      "median_seconds": 1.0430003385408781e-06,
-      "p95_seconds": 0.0010945977997835143,
-      "samples": 25
+    "splunk_hec_ingestion": {
+      "median_seconds": 2.00001522898674e-07,
+      "p95_seconds": 3.00002284348011e-07,
+      "samples": 1000
     },
     "total_pipeline": {
-      "median_seconds": 0.002033896000284585,
-      "p95_seconds": 0.0032886807999602742,
-      "samples": 25
+      "median_seconds": 0.0004154499911237508,
+      "p95_seconds": 0.0004894599987892433,
+      "samples": 1000
     }
-  }
+  },
+  "warmup_seconds": 2.2599997464567423e-05
 }

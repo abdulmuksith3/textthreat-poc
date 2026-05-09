@@ -11,6 +11,7 @@ import pandas as pd
 
 from .constants import LABELS, MODEL_VERSION, STRESS_LABEL
 from .schema import build_event, validate_event
+from .splunk_hec import send_event
 from .utils import DATA_DIR, write_ndjson
 
 
@@ -86,12 +87,24 @@ def write_events(rows: list[dict[str, Any]], output_path: Path) -> Path:
     return write_ndjson(output_path, events_from_predictions(rows))
 
 
+def write_and_optionally_stream_events(rows: list[dict[str, Any]], output_path: Path, send_splunk: bool) -> tuple[Path, list[dict[str, Any]]]:
+    """Build events, write NDJSON, and optionally stream each event to Splunk HEC."""
+    events = events_from_predictions(rows)
+    path = write_ndjson(output_path, events)
+    statuses = []
+    if send_splunk:
+        for event in events:
+            statuses.append(send_event(event))
+    return path, statuses
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Export TextThreat events to NDJSON.")
     parser.add_argument("--sample", action="store_true", help="Write safe synthetic sample events.")
     parser.add_argument("--count", type=int, default=5, help="Number of sample events to generate.")
     parser.add_argument("--input", type=Path, help="Prediction file: JSON, JSONL/NDJSON, or CSV.")
     parser.add_argument("--output", type=Path, default=SAMPLE_OUTPUT, help="NDJSON output path.")
+    parser.add_argument("--send-splunk", action="store_true", help="Also stream generated events to Splunk HEC using environment settings.")
     return parser
 
 
@@ -103,8 +116,11 @@ def main(argv: list[str] | None = None) -> Path:
         rows = load_prediction_rows(args.input)
     else:
         raise SystemExit("Provide --sample or --input predictions file.")
-    output_path = write_events(rows, args.output)
+    output_path, statuses = write_and_optionally_stream_events(rows, args.output, args.send_splunk)
     print(f"Wrote {len(rows)} TextThreat events to {output_path}")
+    if args.send_splunk:
+        sent = sum(1 for status in statuses if status.get("sent"))
+        print(f"Streamed {sent}/{len(statuses)} events to Splunk HEC")
     return output_path
 
 

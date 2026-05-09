@@ -115,6 +115,7 @@ def evaluate_cooccurrence(events: pd.DataFrame, window_minutes: int = 30, thresh
         "demo": False,
         "window_minutes": int(window_minutes),
         "threshold": float(threshold),
+        "alert_risk_rule": "max_individual_risk_plus_0.1_capped_at_1.0",
         "session_count": int(len(truth)),
         "true_positives": tp,
         "false_positives": fp,

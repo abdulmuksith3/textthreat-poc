@@ -55,6 +55,8 @@ The Splunk dashboard is private to the configured Splunk Cloud tenant. After imp
 - `Latest Submitted Events`
 - `Co-occurrence Candidates`
 
+![TextThreat Splunk Cloud dashboard](docs/screenshots/splunk-dashboard-current.png)
+
 The dashboard screenshot from the demo session corresponds to this imported dashboard and uses `index=textthreat`.
 
 ## What The Demo Proves
@@ -79,6 +81,8 @@ The live hosted demo proves the thesis pipeline end to end:
 ```text
 textthreat-poc/
 ├── app.py                              # Hugging Face Spaces entrypoint
+├── Dockerfile                          # Root container entrypoint for local hosting
+├── environment.yml                     # Conda reproduction environment
 ├── README.md                           # This reproduction guide
 ├── requirements.txt                    # Python dependencies
 ├── config/
@@ -110,7 +114,7 @@ textthreat-poc/
 │   ├── check_model_artifacts.py        # Checks model folder completeness
 │   └── upload_models_to_hf.py          # Optional model upload helper
 ├── siem/
-│   └── splunk/                         # SPL queries and dashboard XML
+│   └── splunk/                         # SPL queries, saved searches, and dashboard XML
 ├── soar_lite/
 │   ├── soar_lite.py                    # Inline SOAR-lite + optional poller
 │   ├── playbook.yml                    # Escalation recommendations
@@ -123,9 +127,10 @@ textthreat-poc/
     ├── train_distilbert.py             # DistilBERT Jigsaw/Dreaddit training
     ├── evaluate.py                     # Classification metrics
     ├── calibration.py                  # ECE calculations
-    ├── latency.py                      # Latency profiling
+    ├── latency.py                      # Sample and real model latency profiling
     ├── dp_output.py                    # Output-level privacy perturbation
     ├── fairness.py                     # Fairlearn audit/demo mode
+    ├── explainability.py               # SHAP text attribution summaries
     └── cooccurrence.py                 # Synthetic co-occurrence evaluation
 ```
 
@@ -154,6 +159,7 @@ SOAR-lite threshold rule checks risk_score > 0.8
         |
         |-- writes alert CSV
         |-- sends Postmark email when configured
+        |-- optionally writes alert events to index=textthreat_alerts
 ```
 
 ## Event Schema Summary
@@ -261,6 +267,12 @@ python soar_lite/soar_lite.py --demo
 
 These commands run quickly and do not require Kaggle datasets.
 
+To write NDJSON and stream the same generated events to Splunk HEC in one command, configure `SPLUNK_HEC_URL` and `SPLUNK_HEC_TOKEN`, then run:
+
+```bash
+python -m src.textthreat.export_events --sample --send-splunk
+```
+
 ## Local Demo Setup
 
 ### 1. Create A Local Env File
@@ -287,6 +299,8 @@ SPLUNK_SOURCETYPE=_json
 SPLUNK_SOURCE=textthreat-demo
 SPLUNK_VERIFY_SSL=true
 SPLUNK_HEC_CHANNEL=11111111-1111-4111-8111-111111111111
+SPLUNK_ALERTS_INDEX=textthreat_alerts
+SOAR_LITE_STREAM_ALERTS_TO_SPLUNK=false
 
 SOAR_LITE_ENABLED=1
 SOAR_LITE_THRESHOLD=0.8
@@ -516,6 +530,7 @@ comment submitted
 -> event sent to Splunk
 -> process_events([event]) runs immediately
 -> high-risk events create alert rows
+-> optional alert event is written to textthreat_alerts
 -> optional Postmark email is sent
 ```
 
@@ -544,6 +559,19 @@ model_version
 recommendation
 email_sent
 email_reason
+splunk_alert_sent
+splunk_alert_status
+```
+
+Co-occurrence alerts check toxicity and stress in the same `session_id` within a
+30-minute window. The aggregate alert risk is `max(individual risk) + 0.1`, capped
+at `1.0`, matching the thesis alert scoring rule.
+
+To stream SOAR-lite alert records back into Splunk, create `textthreat_alerts` and set:
+
+```env
+SOAR_LITE_STREAM_ALERTS_TO_SPLUNK=true
+SPLUNK_ALERTS_INDEX=textthreat_alerts
 ```
 
 ### Email Behavior
@@ -642,6 +670,14 @@ data/dreaddit/dreaddit-test.csv
 python -m src.textthreat.train_svm
 ```
 
+The SVM baseline implements the thesis classical pipeline:
+
+- social-text preprocessing: lowercase, URL -> `[URL]`, username -> `[USER]`, number -> `[NUM]`
+- iterative multi-label stratification when `iterative-stratification` is installed
+- TF-IDF unigrams+bigrams with `max_features=50000`
+- per-label SMOTE on TF-IDF feature vectors only
+- calibrated LinearSVC with sigmoid calibration
+
 Quick sample run:
 
 ```bash
@@ -661,6 +697,16 @@ experiments/results/svm_metrics.json
 python -m src.textthreat.train_distilbert --task jigsaw --epochs 1
 ```
 
+The DistilBERT Jigsaw trainer implements the thesis transformer pipeline:
+
+- the same social-text preprocessing as the SVM baseline
+- default `max_length=231`
+- iterative multi-label stratification
+- DistilBERT with LoRA adapters by default
+- class-weighted BCE loss
+- minority weighted sampler for imbalanced labels
+- post-hoc Platt calibration saved as `platt_calibrators.joblib`
+
 Quick sample run:
 
 ```bash
@@ -679,6 +725,8 @@ experiments/results/distilbert_metrics.json
 ```bash
 python -m src.textthreat.train_distilbert --task dreaddit --epochs 1
 ```
+
+The Dreaddit trainer uses the same preprocessing, LoRA-enabled DistilBERT, class-weighted cross entropy, minority weighted sampling, and a binary Platt calibrator saved as `platt_stress_calibrator.joblib`.
 
 Outputs:
 
@@ -710,13 +758,15 @@ QUICK_TEST=False for final evidence run
 |---|---|---|
 | Classification metrics | `python -m src.textthreat.evaluate --sample` | `experiments/results/classification_metrics.json` |
 | Latency | `python -m src.textthreat.latency --sample` | `experiments/results/latency_metrics.json` |
+| Real model latency | `python -m src.textthreat.latency --real --iterations 1000` | `experiments/results/latency_metrics.json` |
 | Calibration / ECE | included in evaluation | `classification_metrics.json` |
 | Output-level DP perturbation | `python -m src.textthreat.dp_output --sample` | `experiments/results/dp_results.json` |
 | Fairness audit/demo | `python -m src.textthreat.fairness --sample` | `experiments/results/fairness_results.json` |
 | Synthetic co-occurrence | `python -m src.textthreat.cooccurrence --sample` | `experiments/results/cooccurrence_results.json` |
+| SHAP explainability | `python -m src.textthreat.explainability --sample` | `experiments/results/shap_explainability_summary.json` |
 | SOAR-lite alerts | `python soar_lite/soar_lite.py --demo` | `experiments/results/soar_alerts_log.csv` |
 
-The DP script is an output-level privacy-preserving perturbation experiment, not full training-level DP-SGD.
+The DP script is an output-level privacy-preserving perturbation experiment. Opacus is included in the environment for thesis reproducibility, while this script evaluates Gaussian output perturbation over probability outputs and derived risk scores.
 
 The co-occurrence evaluation is synthetic and is marked as:
 
@@ -776,16 +826,19 @@ If a token is pasted into chat, logs, screenshots, or a public issue, rotate it.
 |---|---|
 | A1 SVM baseline | [train_svm.py](src/textthreat/train_svm.py), `experiments/results/svm_metrics.json` |
 | A1 DistilBERT | [train_distilbert.py](src/textthreat/train_distilbert.py), hosted Hugging Face models |
+| Preprocessing and stratification | [data.py](src/textthreat/data.py), `iterative-stratification` dependency |
+| Platt calibration / ECE | [train_distilbert.py](src/textthreat/train_distilbert.py), [calibration.py](src/textthreat/calibration.py) |
 | Jigsaw multi-label classification | [constants.py](src/textthreat/constants.py), Jigsaw model |
 | Dreaddit stress classification | [train_distilbert.py](src/textthreat/train_distilbert.py), Dreaddit model |
 | A2 Schema | [textthreat_event_schema.json](schema/textthreat_event_schema.json), [schema.py](src/textthreat/schema.py) |
 | NDJSON export | [export_events.py](src/textthreat/export_events.py), `data/exports/sample_textthreat_events.ndjson` |
-| A3 Splunk SIEM | [splunk_hec.py](src/textthreat/splunk_hec.py), [siem/splunk](siem/splunk), [demo/app.py](demo/app.py) |
+| A3 Splunk SIEM | [splunk_hec.py](src/textthreat/splunk_hec.py), [siem/splunk](siem/splunk), [saved_searches.conf](siem/splunk/saved_searches.conf), [demo/app.py](demo/app.py) |
 | A4 SOAR-lite | [soar_lite.py](soar_lite/soar_lite.py), [playbook.yml](soar_lite/playbook.yml) |
 | RQ1 metrics | [evaluate.py](src/textthreat/evaluate.py), `classification_metrics.json` |
 | RQ2 co-occurrence | [cooccurrence.py](src/textthreat/cooccurrence.py), `cooccurrence_results.json` |
 | RQ3 latency | [latency.py](src/textthreat/latency.py), `latency_metrics.json` |
 | RQ4 DP/fairness | [dp_output.py](src/textthreat/dp_output.py), [fairness.py](src/textthreat/fairness.py) |
+| SHAP explainability | [explainability.py](src/textthreat/explainability.py), `shap_explainability_summary.json` |
 | Reproducibility | [smoke_test.py](scripts/smoke_test.py), [run_all_local.py](scripts/run_all_local.py), dataset READMEs |
 
 ## Proof-Of-Concept Scope

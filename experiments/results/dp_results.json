@@ -3,42 +3,46 @@
   "delta": 1e-05,
   "demo": true,
   "experiment_type": "output-level privacy-preserving perturbation experiment",
+  "mechanism": "Gaussian output perturbation",
+  "mechanism_formula": "sigma = sqrt(2 * ln(1.25 / delta)) * sensitivity / epsilon",
+  "opacus_available": true,
+  "perturbation_target": "label probability outputs with downstream risk score clipping to [0, 1]",
   "results": [
     {
       "epsilon": 0.1,
       "f1_degradation": 0.3666666666666667,
       "macro_f1": 0.6333333333333333,
       "relative_f1_degradation": 0.3666666666666667,
-      "sigma": 4.844805262605389
+      "sigma": 2.713090947059018
     },
     {
       "epsilon": 0.5,
-      "f1_degradation": 0.32777777777777783,
-      "macro_f1": 0.6722222222222222,
-      "relative_f1_degradation": 0.32777777777777783,
-      "sigma": 0.9689610525210779
+      "f1_degradation": 0.2777777777777778,
+      "macro_f1": 0.7222222222222222,
+      "relative_f1_degradation": 0.2777777777777778,
+      "sigma": 0.5426181894118036
     },
     {
       "epsilon": 1.0,
-      "f1_degradation": 0.3055555555555557,
-      "macro_f1": 0.6944444444444443,
-      "relative_f1_degradation": 0.3055555555555557,
-      "sigma": 0.48448052626053895
+      "f1_degradation": 0.1166666666666667,
+      "macro_f1": 0.8833333333333333,
+      "relative_f1_degradation": 0.1166666666666667,
+      "sigma": 0.2713090947059018
     },
     {
       "epsilon": 2.0,
-      "f1_degradation": 0.15436507936507937,
-      "macro_f1": 0.8456349206349206,
-      "relative_f1_degradation": 0.15436507936507937,
-      "sigma": 0.24224026313026947
+      "f1_degradation": 0.0,
+      "macro_f1": 1.0,
+      "relative_f1_degradation": 0.0,
+      "sigma": 0.1356545473529509
     },
     {
       "epsilon": 5.0,
       "f1_degradation": 0.0,
       "macro_f1": 1.0,
       "relative_f1_degradation": 0.0,
-      "sigma": 0.09689610525210779
+      "sigma": 0.05426181894118036
     }
   ],
-  "sensitivity": 0.1
+  "sensitivity": 0.056
 }

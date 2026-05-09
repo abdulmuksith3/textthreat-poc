@@ -50,7 +50,8 @@ index=textthreat event.module=textthreat digital_wellbeing.risk_score>0.8
 | eval is_toxicity=if(harm_type IN ("toxic","severe_toxic","obscene","threat","insult","identity_hate"),1,0)
 | eval is_stress=if(harm_type="stress",1,0)
 | bin _time span=30m
-| stats max(is_toxicity) as toxicity max(is_stress) as stress values(text_hash) as text_hashes by session_id _time
+| stats max(is_toxicity) as toxicity max(is_stress) as stress values(text_hash) as text_hashes max(digital_wellbeing.risk_score) as max_risk by session_id _time
+| eval cooccurrence_risk=min(max_risk+0.1,1.0)
 | where toxicity=1 AND stress=1
 ```
 

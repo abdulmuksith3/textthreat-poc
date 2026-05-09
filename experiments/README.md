@@ -13,6 +13,7 @@ experiments/results/latency_metrics.json
 experiments/results/dp_results.json
 experiments/results/fairness_results.json
 experiments/results/cooccurrence_results.json
+experiments/results/shap_explainability_summary.json
 experiments/results/soar_alerts_log.csv
 ```
 

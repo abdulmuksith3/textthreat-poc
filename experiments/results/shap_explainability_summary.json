@@ -1,0 +1,123 @@
+{
+  "demo": true,
+  "method": "SHAP text attribution",
+  "sample_count": 3,
+  "summaries": [
+    {
+      "text_index": 0,
+      "top_tokens": [
+        {
+          "attribution": 0.010999999999999996,
+          "token": "disgusting "
+        },
+        {
+          "attribution": 0.006999999999999992,
+          "token": "nobody "
+        },
+        {
+          "attribution": 0.005999999999999998,
+          "token": "wants "
+        },
+        {
+          "attribution": 0.0040000000000000036,
+          "token": "and "
+        },
+        {
+          "attribution": 0.004,
+          "token": "you "
+        },
+        {
+          "attribution": 0.003999999999999997,
+          "token": "are "
+        },
+        {
+          "attribution": 0.0024999999999999988,
+          "token": "here"
+        },
+        {
+          "attribution": 0.0024999999999999953,
+          "token": "You "
+        }
+      ]
+    },
+    {
+      "text_index": 1,
+      "top_tokens": [
+        {
+          "attribution": 0.011999999999999993,
+          "token": "overwhelmed "
+        },
+        {
+          "attribution": 0.006999999999999996,
+          "token": "scared "
+        },
+        {
+          "attribution": 0.006999999999999992,
+          "token": "cannot "
+        },
+        {
+          "attribution": 0.004,
+          "token": "and "
+        },
+        {
+          "attribution": 0.003999999999999997,
+          "token": "and "
+        },
+        {
+          "attribution": 0.003500000000000003,
+          "token": "sleep"
+        },
+        {
+          "attribution": 0.003000000000000001,
+          "token": "am "
+        },
+        {
+          "attribution": 0.0020000000000000018,
+          "token": "I "
+        },
+        {
+          "attribution": 0.0004999999999999987,
+          "token": "I "
+        }
+      ]
+    },
+    {
+      "text_index": 2,
+      "top_tokens": [
+        {
+          "attribution": 0.535,
+          "token": "kill "
+        },
+        {
+          "attribution": 0.1805,
+          "token": "you "
+        },
+        {
+          "attribution": 0.003250000000000003,
+          "token": "will "
+        },
+        {
+          "attribution": 0.0024999999999999953,
+          "token": "come "
+        },
+        {
+          "attribution": 0.002249999999999995,
+          "token": "if "
+        },
+        {
+          "attribution": 0.0020000000000000018,
+          "token": "you "
+        },
+        {
+          "attribution": 0.0012500000000000011,
+          "token": "back"
+        },
+        {
+          "attribution": 0.0002500000000000002,
+          "token": "I "
+        }
+      ]
+    }
+  ],
+  "target_output": "toxic probability"
+}

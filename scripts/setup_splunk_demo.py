@@ -104,7 +104,10 @@ def create_dashboard(index: str) -> None:
     owner = env("SPLUNK_DASHBOARD_OWNER", "nobody")
     app = env("SPLUNK_DASHBOARD_APP", "search")
     dashboard_name = env("SPLUNK_DASHBOARD_NAME", "textthreat_digital_wellbeing_risk")
-    xml = DASHBOARD_XML.read_text(encoding="utf-8").replace("index=textthreat", f"index={index}")
+    xml = (
+        DASHBOARD_XML.read_text(encoding="utf-8")
+        .replace("index=textthreat", f"index={index}")
+    )
     data = {
         "name": dashboard_name,
         "eai:data": xml,

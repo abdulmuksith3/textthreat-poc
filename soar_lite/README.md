@@ -2,7 +2,7 @@
 
 `soar_lite.py` provides the thesis SOAR-lite artifact for high-risk TextThreat events.
 
-It reads schema-valid NDJSON events, deduplicates by `text_hash + @timestamp`, and sends SMTP email when SMTP variables are configured. If SMTP is not configured, alerts are logged to:
+It reads schema-valid NDJSON events, deduplicates by `text_hash + @timestamp`, and sends SMTP or Postmark email when email variables are configured. If email is not configured, alerts are logged to:
 
 ```text
 experiments/results/soar_alerts_log.csv
@@ -37,6 +37,11 @@ a 30-minute window, then logs or emails structured alerts. For the hosted thesis
 the recommended free setup uses inline escalation from the Gradio submit action; the
 poller is included for reproducible optional operation.
 
+Set `SOAR_LITE_STREAM_ALERTS_TO_SPLUNK=true` to write SOAR-lite alert records back to
+the Splunk alert index configured by `SPLUNK_ALERTS_INDEX` (default:
+`textthreat_alerts`). Co-occurrence alert risk is computed as the maximum constituent
+event risk plus `0.1`, capped at `1.0`.
+
 Environment variables:
 
 ```text
@@ -44,17 +49,18 @@ SMTP_HOST
 SMTP_PORT
 SMTP_USERNAME
 SMTP_PASSWORD
+POSTMARK_API_TOKEN
+POSTMARK_MESSAGE_STREAM
 ALERT_TO_EMAIL
 ALERT_FROM_EMAIL
 SOAR_LITE_ENABLED
 SOAR_LITE_THRESHOLD
+SOAR_LITE_STREAM_ALERTS_TO_SPLUNK
+SPLUNK_ALERTS_INDEX
 SOAR_LITE_SPLUNK_INDEX
 SPLUNK_MANAGEMENT_URL
 SPLUNK_SEARCH_HOST
 SPLUNK_SEARCH_PORT
 SPLUNK_SEARCH_SCHEME
 SPLUNK_API_TOKEN
-OPENSEARCH_URL
-OPENSEARCH_USERNAME
-OPENSEARCH_PASSWORD
 ```

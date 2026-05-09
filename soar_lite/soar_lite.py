@@ -27,6 +27,7 @@ load_dotenv(ROOT / ".env")
 
 from src.textthreat.constants import HIGH_RISK_THRESHOLD
 from src.textthreat.export_events import SAMPLE_OUTPUT, sample_prediction_rows, write_events
+from src.textthreat.splunk_hec import SplunkHECConfig, config_from_env, send_event
 from src.textthreat.utils import RESULTS_DIR, ensure_dir, now_utc_iso, read_ndjson
 
 
@@ -230,7 +231,64 @@ def alert_row(
         "recommendation": recommendation,
         "email_sent": email_sent,
         "email_reason": email_reason,
+        "splunk_alert_sent": "",
+        "splunk_alert_status": "",
     }
+
+
+def splunk_alert_stream_enabled() -> bool:
+    """Return true when SOAR-lite should write alert records to a Splunk alerts index."""
+    return os.getenv("SOAR_LITE_STREAM_ALERTS_TO_SPLUNK", "").lower() in {"1", "true", "yes"}
+
+
+def splunk_alert_config() -> SplunkHECConfig | None:
+    """Build an HEC config for the alert index, reusing primary HEC settings by default."""
+    base = config_from_env()
+    if base is None:
+        return None
+    return SplunkHECConfig(
+        url=os.getenv("SPLUNK_ALERTS_HEC_URL", base.url).rstrip("/"),
+        token=os.getenv("SPLUNK_ALERTS_HEC_TOKEN", base.token),
+        index=os.getenv("SPLUNK_ALERTS_INDEX", "textthreat_alerts"),
+        sourcetype=os.getenv("SPLUNK_ALERTS_SOURCETYPE", base.sourcetype),
+        source=os.getenv("SPLUNK_ALERTS_SOURCE", "textthreat-soar-lite"),
+    )
+
+
+def alert_event(row: dict[str, Any], source_event: dict[str, Any]) -> dict[str, Any]:
+    """Build a Splunk-ready SOAR-lite alert event."""
+    return {
+        "@timestamp": row["alert_timestamp"],
+        "event": {
+            "kind": "alert",
+            "module": "textthreat",
+            "category": ["digital_wellbeing", "soar_lite"],
+        },
+        "alert": {
+            "type": row["alert_type"],
+            "recommendation": row["recommendation"],
+            "email_sent": row["email_sent"],
+            "email_reason": row["email_reason"],
+        },
+        "text_hash": row["text_hash"],
+        "session_id": row["session_id"],
+        "digital_wellbeing": source_event.get("digital_wellbeing", {}),
+    }
+
+
+def maybe_stream_alert_to_splunk(row: dict[str, Any], source_event: dict[str, Any]) -> dict[str, Any]:
+    """Optionally write a SOAR-lite alert record to the configured Splunk alert index."""
+    if not splunk_alert_stream_enabled():
+        return row
+    config = splunk_alert_config()
+    if config is None:
+        row["splunk_alert_sent"] = False
+        row["splunk_alert_status"] = "skipped_missing_hec_config"
+        return row
+    status = send_event(alert_event(row, source_event), config=config)
+    row["splunk_alert_sent"] = bool(status.get("sent"))
+    row["splunk_alert_status"] = str(status.get("status") or status.get("reason") or status.get("error", ""))
+    return row
 
 
 def append_alert_log(rows: list[dict[str, Any]], path: Path = ALERT_LOG_PATH) -> Path:
@@ -247,6 +305,8 @@ def append_alert_log(rows: list[dict[str, Any]], path: Path = ALERT_LOG_PATH) ->
         "recommendation",
         "email_sent",
         "email_reason",
+        "splunk_alert_sent",
+        "splunk_alert_status",
     ]
     exists = path.exists()
     with path.open("a", newline="", encoding="utf-8") as handle:
@@ -269,15 +329,14 @@ def process_events(events: list[dict[str, Any]], threshold: float = HIGH_RISK_TH
         seen_hashes.add(key)
         recommendation = recommendation_for(event, playbook, "threshold")
         email_result = send_email_alert(event, recommendation, "threshold")
-        alert_rows.append(
-            alert_row(
-                event,
-                "threshold",
-                recommendation,
-                bool(email_result.get("sent")),
-                str(email_result.get("reason", "")),
-            )
+        row = alert_row(
+            event,
+            "threshold",
+            recommendation,
+            bool(email_result.get("sent")),
+            str(email_result.get("reason", "")),
         )
+        alert_rows.append(maybe_stream_alert_to_splunk(row, event))
     alert_rows.extend(process_cooccurrence_alerts(events, playbook))
     if alert_rows:
         append_alert_log(alert_rows)
@@ -318,7 +377,7 @@ def build_cooccurrence_event(session_id: str, first: dict[str, Any], second: dic
     first_dw = first.get("digital_wellbeing", {})
     second_dw = second.get("digital_wellbeing", {})
     harms = sorted(set(first_dw.get("harm_types", [])) | set(second_dw.get("harm_types", [])))
-    risk = max(float(first_dw.get("risk_score", 0.0)), float(second_dw.get("risk_score", 0.0)))
+    risk = min(max(float(first_dw.get("risk_score", 0.0)), float(second_dw.get("risk_score", 0.0))) + 0.1, 1.0)
     return {
         "@timestamp": max(str(first.get("@timestamp", "")), str(second.get("@timestamp", ""))),
         "text_hash": f"{first.get('text_hash')}+{second.get('text_hash')}",
@@ -362,15 +421,14 @@ def process_cooccurrence_alerts(
                 aggregate = build_cooccurrence_event(session_id, toxicity_event, stress_event)
                 recommendation = recommendation_for(aggregate, playbook, "co_occurrence")
                 email_result = send_email_alert(aggregate, recommendation, "co_occurrence")
-                alert_rows.append(
-                    alert_row(
-                        aggregate,
-                        "co_occurrence",
-                        recommendation,
-                        bool(email_result.get("sent")),
-                        str(email_result.get("reason", "")),
-                    )
+                row = alert_row(
+                    aggregate,
+                    "co_occurrence",
+                    recommendation,
+                    bool(email_result.get("sent")),
+                    str(email_result.get("reason", "")),
                 )
+                alert_rows.append(maybe_stream_alert_to_splunk(row, aggregate))
                 break
     return alert_rows
 

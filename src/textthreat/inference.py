@@ -9,8 +9,10 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import joblib
 
 from .constants import LABELS, MODEL_VERSION, STRESS_LABEL
+from .data import normalize_social_text
 from .utils import MODELS_DIR
 
 
@@ -82,19 +84,37 @@ class TextThreatAnalyzer:
                     base_model_name = payload.get("base_model_name_or_path") or base_model_name
                 except Exception:
                     pass
+                is_stress_model = local_subdir == "distilbert_dreaddit"
+                id2label = (
+                    {0: "not_stress", 1: STRESS_LABEL}
+                    if is_stress_model
+                    else {idx: label for idx, label in enumerate(LABELS)}
+                )
+                label2id = (
+                    {"not_stress": 0, STRESS_LABEL: 1}
+                    if is_stress_model
+                    else {label: idx for idx, label in enumerate(LABELS)}
+                )
                 base_model = AutoModelForSequenceClassification.from_pretrained(
                     base_model_name,
-                    num_labels=len(LABELS),
-                    problem_type="multi_label_classification",
-                    id2label={idx: label for idx, label in enumerate(LABELS)},
-                    label2id={label: idx for idx, label in enumerate(LABELS)},
+                    num_labels=2 if is_stress_model else len(LABELS),
+                    problem_type="single_label_classification" if is_stress_model else "multi_label_classification",
+                    id2label=id2label,
+                    label2id=label2id,
                 )
                 base_model.config.update(adapter_config.to_dict())
                 model = PeftModel.from_pretrained(base_model, model_id)
             else:
                 model = AutoModelForSequenceClassification.from_pretrained(model_id)
             model.eval()
-            return {"tokenizer": tokenizer, "model": model, "torch": torch, "model_id": model_id}
+            calibrators = None
+            model_path = Path(model_id)
+            for filename in ["platt_calibrators.joblib", "platt_stress_calibrator.joblib"]:
+                calibrator_path = model_path / filename
+                if calibrator_path.exists():
+                    calibrators = joblib.load(calibrator_path)
+                    break
+            return {"tokenizer": tokenizer, "model": model, "torch": torch, "model_id": model_id, "calibrators": calibrators}
         except Exception:
             return None
 
@@ -116,16 +136,36 @@ class TextThreatAnalyzer:
         tokenizer = bundle["tokenizer"]
         model = bundle["model"]
         torch = bundle["torch"]
-        inputs = tokenizer(text, truncation=True, padding=True, max_length=256, return_tensors="pt")
+        prepared_text = normalize_social_text(text)
+        inputs = tokenizer(prepared_text, truncation=True, padding=True, max_length=231, return_tensors="pt")
         accepted_inputs = inspect.signature(model.forward).parameters
         inputs = {key: value for key, value in inputs.items() if key in accepted_inputs}
         with torch.no_grad():
             logits = model(**inputs).logits.detach().cpu().numpy()[0]
         labels = [model.config.id2label.get(idx, LABELS[idx] if idx < len(LABELS) else str(idx)) for idx in range(len(logits))]
+        calibrators = bundle.get("calibrators")
         if len(logits) == 2 and STRESS_LABEL in labels:
-            exp = np.exp(logits - np.max(logits))
-            probs = exp / exp.sum()
-            return {STRESS_LABEL: float(probs[labels.index(STRESS_LABEL)])}
+            if calibrators is not None and hasattr(calibrators, "predict_proba"):
+                stress_probability = calibrators.predict_proba(np.asarray([[logits[1] - logits[0]]]))[0, 1]
+            elif isinstance(calibrators, dict) and calibrators.get("type") == "constant":
+                stress_probability = calibrators["probability"]
+            else:
+                exp = np.exp(logits - np.max(logits))
+                probs = exp / exp.sum()
+                stress_probability = probs[labels.index(STRESS_LABEL)]
+            return {STRESS_LABEL: float(stress_probability)}
+        if isinstance(calibrators, dict):
+            calibrated_scores = {}
+            for index, label in enumerate(labels):
+                calibrator = calibrators.get(label)
+                if label not in LABELS or calibrator is None:
+                    continue
+                if isinstance(calibrator, dict) and calibrator.get("type") == "constant":
+                    calibrated_scores[label] = float(calibrator["probability"])
+                else:
+                    calibrated_scores[label] = float(calibrator.predict_proba(np.asarray([[logits[index]]]))[0, 1])
+            if calibrated_scores:
+                return calibrated_scores
         probs = 1.0 / (1.0 + np.exp(-logits))
         return {label: float(prob) for label, prob in zip(labels, probs) if label in LABELS}
 
