@@ -1,14 +1,40 @@
 {
+  "calibration": {
+    "method": "platt_logistic_regression_binary_margin",
+    "path": "/content/textthreat-poc/models/distilbert_dreaddit/platt_stress_calibrator.joblib"
+  },
+  "class_weighted_ce": true,
   "demo": false,
   "epoch": 1.0,
-  "eval_f1": 0.7478991596638656,
-  "eval_loss": 0.6317960619926453,
-  "eval_pr_auc": 0.8258913541640759,
-  "eval_roc_auc": 0.8237268355342513,
-  "eval_runtime": 4.6139,
-  "eval_samples_per_second": 154.967,
-  "eval_steps_per_second": 19.506,
+  "eval_f1": 0.6655791190864601,
+  "eval_loss": 0.6326619982719421,
+  "eval_pr_auc": 0.8351179062453598,
+  "eval_roc_auc": 0.8291038112693266,
+  "eval_runtime": 4.6989,
+  "eval_samples_per_second": 152.163,
+  "eval_steps_per_second": 19.153,
+  "imbalance_metadata": {
+    "class_counts": {
+      "not_stress": 1350,
+      "stress": 1488
+    },
+    "class_weight": {
+      "not_stress": 1.051111111111111,
+      "stress": 0.9536290322580645
+    },
+    "sample_weight_max": 1.051111111111111,
+    "sample_weight_min": 0.9536290322580645
+  },
+  "max_length": 231,
+  "minority_weighted_sampler": true,
   "model_name": "distilbert-base-uncased",
+  "preprocessing": "lowercase_url_user_number_normalization",
+  "split_method": "provided_dreaddit_test_file",
   "task": "dreaddit",
-  "use_lora": true
+  "use_lora": true,
+  "validation_metrics_after_calibration": {
+    "macro_f1": 0.7387311990192842,
+    "pr_auc": 0.8351179062453598,
+    "roc_auc": 0.8291038112693266
+  }
 }
