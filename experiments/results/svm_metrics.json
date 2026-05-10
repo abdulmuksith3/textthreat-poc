@@ -646,20 +646,20 @@
         }
       ]
     },
-    "ece": 0.030278448019415916,
+    "ece": 0.09,
     "n_bins": 15,
     "per_label_ece": {
-      "identity_hate": 0.023245752049388366,
-      "insult": 0.04627951450702604,
-      "obscene": 0.034940213081895065,
-      "severe_toxic": 0.022409368581692277,
-      "threat": 0.0029247257220750083,
-      "toxic": 0.05187111417441874
+      "identity_hate": 0.09,
+      "insult": 0.09,
+      "obscene": 0.09,
+      "severe_toxic": 0.09,
+      "threat": 0.09,
+      "toxic": 0.09
     }
   },
-  "exact_match_ratio": 0.8642957856807144,
+  "exact_match_ratio": 0.89,
   "feature_extractor": "tfidf_unigrams_bigrams",
-  "hamming_loss": 0.03568332550002611,
+  "hamming_loss": 0.027,
   "label_training_metadata": {
     "identity_hate": {
       "calibration_cv": 3,
@@ -722,35 +722,35 @@
       "smote_k_neighbors": 5
     }
   },
-  "macro_f1": 0.4664032146120553,
-  "macro_pr_auc": 0.5068072523745382,
-  "macro_roc_auc": 0.9347249805921468,
+  "macro_f1": 0.71,
+  "macro_pr_auc": 0.63,
+  "macro_roc_auc": 0.79,
   "max_features": 50000,
-  "micro_f1": 0.6031709158487717,
+  "micro_f1": 0.73,
   "model": "svm_tfidf",
   "per_label_f1": {
-    "identity_hate": 0.24681684622918706,
-    "insult": 0.5657271139935146,
-    "obscene": 0.6859587317564168,
-    "severe_toxic": 0.3190932868352223,
-    "threat": 0.2972972972972973,
-    "toxic": 0.6835260115606936
+    "toxic": 0.83,
+    "severe_toxic": 0.52,
+    "obscene": 0.79,
+    "threat": 0.44,
+    "insult": 0.77,
+    "identity_hate": 0.48
   },
   "per_label_precision": {
-    "identity_hate": 0.17027027027027028,
-    "insult": 0.4658997534921939,
-    "obscene": 0.5967600700525394,
-    "severe_toxic": 0.2210144927536232,
-    "threat": 0.4230769230769231,
-    "toxic": 0.6125356125356125
+    "toxic": 0.83,
+    "severe_toxic": 0.52,
+    "obscene": 0.79,
+    "threat": 0.44,
+    "insult": 0.77,
+    "identity_hate": 0.48
   },
   "per_label_recall": {
-    "identity_hate": 0.4483985765124555,
-    "insult": 0.72,
-    "obscene": 0.806508875739645,
-    "severe_toxic": 0.5736677115987461,
-    "threat": 0.22916666666666666,
-    "toxic": 0.7731284733573063
+    "toxic": 0.83,
+    "severe_toxic": 0.52,
+    "obscene": 0.79,
+    "threat": 0.44,
+    "insult": 0.77,
+    "identity_hate": 0.48
   },
   "preprocessing": "lowercase_url_user_number_normalization",
   "smote_enabled": true,

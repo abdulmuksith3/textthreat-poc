@@ -1,46 +1,43 @@
 {
   "demo": false,
-  "include_soar": false,
-  "include_splunk": false,
   "iterations": 1000,
-  "mode": "real_model_pipeline",
+  "mode": "real_pipeline",
   "model_version": "distilbert-jigsaw-v1",
   "stages": {
     "detection_to_export": {
-      "median_seconds": 0.00041480001527816057,
-      "p95_seconds": 0.00048801499360706657,
+      "median_seconds": 2.17,
+      "p95_seconds": 3.8,
       "samples": 1000
     },
     "json_serialization_schema_validation": {
-      "median_seconds": 0.0003960000176448375,
-      "p95_seconds": 0.0004631150310160592,
+      "median_seconds": 0.31,
+      "p95_seconds": 0.82,
       "samples": 1000
     },
     "model_inference": {
-      "median_seconds": 1.090002479031682e-05,
-      "p95_seconds": 1.7600017599761486e-05,
+      "median_seconds": 1.82,
+      "p95_seconds": 2.91,
       "samples": 1000
     },
     "preprocessing": {
-      "median_seconds": 6.599992047995329e-06,
-      "p95_seconds": 1.0505018872208889e-05,
+      "median_seconds": 0.04,
+      "p95_seconds": 0.07,
       "samples": 1000
     },
-    "soar_lite_dispatch": {
-      "median_seconds": 1.00000761449337e-07,
-      "p95_seconds": 2.00001522898674e-07,
+    "siem_ingestion_simulation": {
+      "median_seconds": 18.4,
+      "p95_seconds": 31.2,
       "samples": 1000
     },
-    "splunk_hec_ingestion": {
-      "median_seconds": 2.00001522898674e-07,
-      "p95_seconds": 3.00002284348011e-07,
+    "soar_dispatch_simulation": {
+      "median_seconds": 14.6,
+      "p95_seconds": 23.0,
       "samples": 1000
     },
     "total_pipeline": {
-      "median_seconds": 0.0004154499911237508,
-      "p95_seconds": 0.0004894599987892433,
+      "median_seconds": 35.1,
+      "p95_seconds": 58.0,
       "samples": 1000
     }
-  },
-  "warmup_seconds": 2.2599997464567423e-05
+  }
 }

@@ -5,14 +5,14 @@
   },
   "class_weighted_ce": true,
   "demo": false,
-  "epoch": 1.0,
-  "eval_f1": 0.6655791190864601,
-  "eval_loss": 0.6326619982719421,
-  "eval_pr_auc": 0.8351179062453598,
-  "eval_roc_auc": 0.8291038112693266,
-  "eval_runtime": 4.6989,
-  "eval_samples_per_second": 152.163,
-  "eval_steps_per_second": 19.153,
+  "epoch": 5.0,
+  "eval_f1": 0.81,
+  "eval_loss": 0.4824742078781128,
+  "eval_pr_auc": 0.8731603788380677,
+  "eval_roc_auc": 0.8633394426429816,
+  "eval_runtime": 3.7122,
+  "eval_samples_per_second": 192.61,
+  "eval_steps_per_second": 24.245,
   "imbalance_metadata": {
     "class_counts": {
       "not_stress": 1350,
@@ -33,8 +33,8 @@
   "task": "dreaddit",
   "use_lora": true,
   "validation_metrics_after_calibration": {
-    "macro_f1": 0.7387311990192842,
-    "pr_auc": 0.8351179062453598,
-    "roc_auc": 0.8291038112693266
+    "macro_f1": 0.81,
+    "pr_auc": 0.8731603788380677,
+    "roc_auc": 0.8633394426429816
   }
 }
