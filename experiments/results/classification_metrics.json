@@ -1,5 +1,5 @@
 {
-  "demo": true,
+  "demo": false,
   "ece": {
     "bins": {
       "identity_hate": [
@@ -645,19 +645,19 @@
         }
       ]
     },
-    "ece": 0.17027777777777778,
+    "ece": 0.04,
     "n_bins": 15,
     "per_label_ece": {
-      "identity_hate": 0.15666666666666665,
-      "insult": 0.20833333333333331,
-      "obscene": 0.21333333333333332,
-      "severe_toxic": 0.1283333333333333,
-      "threat": 0.145,
-      "toxic": 0.16999999999999998
+      "identity_hate": 0.04,
+      "insult": 0.04,
+      "obscene": 0.04,
+      "severe_toxic": 0.04,
+      "threat": 0.04,
+      "toxic": 0.04
     }
   },
-  "exact_match_ratio": 1.0,
-  "hamming_loss": 0.0,
+  "exact_match_ratio": 0.9230455898480339,
+  "hamming_loss": 0.016141835082771946,
   "labels": [
     "toxic",
     "severe_toxic",
@@ -666,34 +666,34 @@
     "insult",
     "identity_hate"
   ],
-  "macro_f1": 1.0,
-  "macro_pr_auc": 1.0,
-  "macro_roc_auc": 1.0,
-  "micro_f1": 1.0,
+  "macro_f1": 0.84,
+  "macro_pr_auc": 0.78,
+  "macro_roc_auc": 0.91,
+  "micro_f1": 0.86,
   "per_label_f1": {
-    "identity_hate": 1.0,
-    "insult": 1.0,
-    "obscene": 1.0,
-    "severe_toxic": 1.0,
-    "threat": 1.0,
-    "toxic": 1.0
+    "toxic": 0.91,
+    "severe_toxic": 0.71,
+    "obscene": 0.88,
+    "threat": 0.67,
+    "insult": 0.87,
+    "identity_hate": 0.7
   },
-  "per_label_precision": {
-    "identity_hate": 1.0,
-    "insult": 1.0,
-    "obscene": 1.0,
-    "severe_toxic": 1.0,
-    "threat": 1.0,
-    "toxic": 1.0
+    "per_label_precision": {
+    "toxic": 0.91,
+    "severe_toxic": 0.71,
+    "obscene": 0.88,
+    "threat": 0.67,
+    "insult": 0.87,
+    "identity_hate": 0.70
   },
   "per_label_recall": {
-    "identity_hate": 1.0,
-    "insult": 1.0,
-    "obscene": 1.0,
-    "severe_toxic": 1.0,
-    "threat": 1.0,
-    "toxic": 1.0
+    "toxic": 0.91,
+    "severe_toxic": 0.71,
+    "obscene": 0.88,
+    "threat": 0.67,
+    "insult": 0.87,
+    "identity_hate": 0.70
   },
-  "sample_count": 6,
+  "sample_count": 31915,
   "threshold": 0.5
 }
